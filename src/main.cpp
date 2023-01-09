@@ -1,6 +1,8 @@
 #include <fmt/core.h>
 #include <fmt/ostream.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include "lexer.hpp"
 
 std::ostream& operator<<(std::ostream& os, const Token& t) {
@@ -33,7 +35,29 @@ void repl() {
   }
 }
 
+std::string slurp(std::string file) {
+  std::ifstream input(file);
+  std::stringstream ss;
+  ss << input.rdbuf();
+  return ss.str();
+}
+
+void file_read(std::string file) {
+  std::string input = slurp(file);
+  Lexer lexer{};
+  try {
+    auto tokens = lexer.get_tokens(input);
+    fmt::print("{}\n", fmt::join(tokens, "\n"));
+  } catch (lexer_exception& e) {
+    fmt::print("[LEXER ERROR]   {}\n", e.what());
+  }
+}
+
 int main(int argc, char* argv[]) {
-  repl();
+  if (argc > 1) {
+    file_read(argv[1]);
+  } else {
+    repl();
+  }
   return 0;
 }
