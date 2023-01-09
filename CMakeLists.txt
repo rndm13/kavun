@@ -31,7 +31,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 llvm_map_components_to_libnames(llvm_libs support core irreader)
 
-# --------------------
+# ------ kavun -------
 
 project(kavun)
 
@@ -44,3 +44,16 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE ${llvm_libs}
   # -fsanitize=address
 )
+
+# ------ tests -------
+
+include(CTest)
+
+set (lexer_error_regex "[LEXER ERROR]")
+set (lexer_pass_regex  "EOF")
+
+add_test(NAME lexer_pass1 COMMAND kavun tests/lexer_pass1.kvn)
+set_property(TEST lexer_pass1 PROPERTY PASS_REGULAR_EXPRESSION "${lexer_pass_regex}")
+
+add_test(NAME lexer_fail COMMAND kavun tests/lexer_fail1.kvn)
+set_property(TEST lexer_fail PROPERTY PASS_REGULAR_EXPRESSION "${lexer_error_regex}")
