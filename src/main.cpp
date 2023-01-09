@@ -20,6 +20,11 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
 
 template <> struct fmt::formatter<Token> : ostream_formatter {};
 
+enum Return_values : int {
+  SUCCESS = 0,
+  LEXER_ERROR = 1,
+};
+
 void repl() {
   std::string line;
   fmt::print("> ");
@@ -50,6 +55,7 @@ void file_read(std::string file) {
     fmt::print("{}\n", fmt::join(tokens, "\n"));
   } catch (lexer_exception& e) {
     fmt::print("[LEXER ERROR]   {}\n", e.what());
+    exit(LEXER_ERROR);
   }
 }
 
@@ -59,5 +65,5 @@ int main(int argc, char* argv[]) {
   } else {
     repl();
   }
-  return 0;
+  return SUCCESS;
 }
