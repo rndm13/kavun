@@ -55,5 +55,11 @@ set (lexer_pass_regex  "EOF")
 add_test(NAME lexer_pass1 COMMAND kavun tests/lexer_pass1.kvn)
 set_property(TEST lexer_pass1 PROPERTY PASS_REGULAR_EXPRESSION "${lexer_pass_regex}")
 
-add_test(NAME lexer_fail COMMAND kavun tests/lexer_fail1.kvn)
-set_property(TEST lexer_fail PROPERTY PASS_REGULAR_EXPRESSION "${lexer_error_regex}")
+add_test(NAME no_end_of_string COMMAND kavun tests/lexer_fail_no_end_string.kvn)
+set_property(TEST no_end_of_string PROPERTY PASS_REGULAR_EXPRESSION "${lexer_error_regex}")
+
+add_test(NAME double_floating_points COMMAND kavun tests/lexer_fail_2_points.kvn)
+set_property(TEST double_floating_points PROPERTY PASS_REGULAR_EXPRESSION "${lexer_error_regex}")
+
+add_test(NAME invalid_character COMMAND kavun tests/lexer_fail_inv_char.kvn)
+set_property(TEST invalid_character PROPERTY PASS_REGULAR_EXPRESSION "${lexer_error_regex}")
