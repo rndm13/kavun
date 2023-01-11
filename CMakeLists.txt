@@ -39,7 +39,7 @@ add_executable(${PROJECT_NAME} src/main.cpp)
 add_subdirectory(src)
 
 target_link_libraries(${PROJECT_NAME}
-  PRIVATE lexer
+  PRIVATE lexer parser
   PRIVATE fmt::fmt
   PRIVATE ${llvm_libs}
   # -fsanitize=address
@@ -50,7 +50,7 @@ target_link_libraries(${PROJECT_NAME}
 include(CTest)
 
 set (lexer_error_regex "[LEXER ERROR]")
-set (lexer_pass_regex  "EOF")
+set (lexer_pass_regex  "[LEXER PASS ]")
 
 add_test(NAME lexer_pass1 COMMAND kavun tests/lexer_pass1.kvn)
 set_property(TEST lexer_pass1 PROPERTY PASS_REGULAR_EXPRESSION "${lexer_pass_regex}")

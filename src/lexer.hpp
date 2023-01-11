@@ -53,7 +53,7 @@ enum TokenType {
 // Possible types of data:
 // string, double, bool, null
 
-typedef std::variant<std::string, double, bool> Literal;
+typedef std::variant<std::monostate, std::string, double, bool> Literal;
 
 class Token {
 public:
@@ -79,7 +79,6 @@ public:
   virtual const char* what() {
     return info.c_str();
   }
-
 };
 
 class Lexer {
@@ -120,7 +119,7 @@ class Lexer {
 
   void throw_exception(const std::string& info) {
     add_token(TOK_FAIL);
-    throw lexer_exception(cur_col,cur_line, info);
+    throw lexer_exception(cur_col, cur_line, info);
   }
 
   void new_line() {

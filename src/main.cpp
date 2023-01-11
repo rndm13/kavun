@@ -3,7 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
 #include "lexer.hpp"
+// #include "parser.hpp"
 
 std::ostream& operator<<(std::ostream& os, const Token& t) {
   if (t.type == TOK_EOF)  os << "EOF";
@@ -33,6 +35,7 @@ void repl() {
     try {
       auto tokens = lexer.get_tokens(line);
       fmt::print("{}\n", fmt::join(tokens, "\n"));
+      fmt::print("[LEXER PASS ]\n");
     } catch (lexer_exception& e) {
       fmt::print("[LEXER ERROR]   {}\n", e.what());
     }
@@ -53,6 +56,7 @@ void file_read(std::string file) {
   try {
     auto tokens = lexer.get_tokens(input);
     fmt::print("{}\n", fmt::join(tokens, "\n"));
+    fmt::print("[LEXER PASS ]\n");
   } catch (lexer_exception& e) {
     fmt::print("[LEXER ERROR]   {}\n", e.what());
     exit(LEXER_ERROR);
