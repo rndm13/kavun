@@ -42,17 +42,17 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE lexer parser
   PRIVATE fmt::fmt
   PRIVATE ${llvm_libs}
-  # -fsanitize=address
-)
+  -fsanitize=address
+  )
 
 # ------ tests -------
 
 include(CTest)
 
-set (lexer_error_regex "[LEXER ERROR]")
-set (lexer_pass_regex  "[LEXER PASS ]")
+set (lexer_error_regex "LEXER ERROR")
+set (lexer_pass_regex  "LEXER PASS")
 
-add_test(NAME lexer_pass1 COMMAND kavun tests/lexer_pass1.kvn)
+add_test(NAME lexer_pass1 COMMAND kavun tests/valid_program1.kvn)
 set_property(TEST lexer_pass1 PROPERTY PASS_REGULAR_EXPRESSION "${lexer_pass_regex}")
 
 add_test(NAME no_end_of_string COMMAND kavun tests/lexer_fail_no_end_string.kvn)

@@ -1,0 +1,5 @@
+[LEXER PASS  ]
+[PARSER ERROR]  ('main', line 5, col 31) : failed to parse entire file. exception stack:
+('}', line 3, col 21) : statements must be either variable declaration or expression
+('}', line 3, col 21) : failed to parse expression
+('main', line 5, col 31) : function declaration must start with fn

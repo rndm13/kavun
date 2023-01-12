@@ -1,0 +1,13 @@
+fn sin() {
+  // TODO
+  // return 42;
+}
+
+fn main() {
+  var pi = 3.14;
+
+  var tau;
+  
+  tau = pi / 2;
+  var funcCall = sin(tau) + 2;
+}

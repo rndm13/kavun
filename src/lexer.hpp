@@ -3,6 +3,7 @@
 #include <variant>
 #include <string>
 #include <fmt/core.h>
+#include <fmt/ostream.h>
 #include <unordered_map>
 #include <vector>
 #include <ranges>
@@ -69,6 +70,17 @@ public:
         const Literal& __literal, size_t __line, size_t __col) :
   type(__type), lexeme(__lexeme), literal(__literal),
   line(__line), col(__col) { }
+
+  bool is_literal() {
+    return type == TOK_NUMBER || type == TOK_BOOL || type == TOK_STRING || type == TOK_NULL;
+  }
+  bool is_binary_op() {
+    return type == TOK_PLUS || type == TOK_MINUS   || type == TOK_STAR       || type == TOK_SLASH || type == TOK_EQUAL || type == TOK_AND || type == TOK_OR
+        || type == TOK_LESS || type == TOK_GREATER || type == TOK_LESS_EQUAL || type == TOK_GREATER_EQUAL || type == TOK_EQUAL_EQUAL;
+  }
+  bool is_unary_op() {
+    return type == TOK_MINUS;
+  }
 };
 
 class lexer_exception : std::exception {
@@ -171,7 +183,7 @@ class Lexer {
 
   void add_token(TokenType type, const std::string &lexeme = "",
                  const Literal &literal = Literal()) {
-    tokens.emplace_back(type, lexeme, literal, cur_line, current_ind);
+    tokens.emplace_back(type, lexeme, literal, cur_line, cur_col);
   }
   
   void handle_number();

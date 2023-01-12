@@ -19,8 +19,10 @@ void Lexer::scan_token() {
   switch (c) {
   break; case '(': add_token(TOK_LEFT_PAREN, get_cur_lexeme(1));
   break; case ')': add_token(TOK_RIGHT_PAREN, get_cur_lexeme(1));
-  break; case '{': add_token(TOK_LEFT_BRACE, get_cur_lexeme(1));
-  break; case '}': add_token(TOK_RIGHT_BRACE, get_cur_lexeme(1));
+  break; case '{': add_token(TOK_LEFT_CURLY, get_cur_lexeme(1));
+  break; case '}': add_token(TOK_RIGHT_CURLY, get_cur_lexeme(1));
+  break; case '[': add_token(TOK_LEFT_BRACE, get_cur_lexeme(1));
+  break; case ']': add_token(TOK_RIGHT_BRACE, get_cur_lexeme(1));
   break; case ',': add_token(TOK_COMMA, get_cur_lexeme(1));
   break; case '.': add_token(TOK_DOT, get_cur_lexeme(1));
   break; case '-': add_token(TOK_MINUS, get_cur_lexeme(1));
