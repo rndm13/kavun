@@ -1,4 +1,5 @@
 fn main() {
   var a = -1 + 2 / 3 * 2 - time() + dt;
+  // Expected: ((((-1) + ((2 / 3) * 2)) - time ()) + dt)
+  // 1: (- )
 }
-

@@ -8,6 +8,8 @@ fn main() {
 
   var tau;
   
-  tau = pi / 2;
+  tau = pi * 2;
   var funcCall = sin(tau) + 2;
+
+  var group = -1 + 2;
 }

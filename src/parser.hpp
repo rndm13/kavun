@@ -28,6 +28,7 @@
 // VariableDeclaration = 'var' Identifier ('=' Expression)? 
 //
 // Expression = Literal 
+//            | Variable
 //            | BinaryOperation
 //            | FunctionCall
 //            | UnaryOperation
@@ -89,6 +90,7 @@ struct ScopeAST : AST {
 
 struct ExpressionAST : StatementAST {
   typedef std::unique_ptr<ExpressionAST> Ptr; 
+  virtual int get_priority() const = 0;
 };
 
 struct VariableDeclarationAST : StatementAST {
@@ -114,6 +116,9 @@ struct LiteralAST : ExpressionAST {
   std::string pretty_show() const {
     return fmt::format("LiteralAST {}", value.lexeme);
   }
+  int get_priority() const {
+    return 0;
+  }
 };
 
 struct VariableAST : ExpressionAST {
@@ -122,6 +127,10 @@ struct VariableAST : ExpressionAST {
 
   std::string pretty_show() const {
     return fmt::format("VariableAST {}", id.lexeme);
+  }
+
+  int get_priority() const {
+    return 0;
   }
 };
 
@@ -135,7 +144,13 @@ struct BinaryOperationAST : ExpressionAST {
   }
 
   std::string pretty_show() const {
-    return fmt::format("BinaryOperationAST {} {} {}", lhs -> pretty_show(), op.lexeme, rhs -> pretty_show());
+    // return fmt::format("BinaryOperationAST {} {} {}", lhs -> pretty_show(), op.lexeme, rhs -> pretty_show());
+    return fmt::format("({} {} {})", lhs -> pretty_show(), op.lexeme, rhs -> pretty_show());
+  }
+
+  int get_priority() const {
+    // TODO:
+    return 0;
   }
 };
 
@@ -147,7 +162,12 @@ struct UnaryOperationAST : ExpressionAST {
   }
 
   std::string pretty_show() const {
-    return fmt::format("UnaryOperationAST {} {}", op.lexeme, rhs -> pretty_show());
+    // return fmt::format("UnaryOperationAST {} {}", op.lexeme, rhs -> pretty_show());
+    return fmt::format("({} {})", op.lexeme, rhs -> pretty_show());
+  }
+
+  int get_priority() const {
+    return 99999;
   }
 };
 
@@ -160,6 +180,10 @@ struct GroupingAST : ExpressionAST {
 
   std::string pretty_show() const {
     return fmt::format("GroupingAST ({})", expr -> pretty_show());
+  }
+
+  int get_priority() const {
+    return 99999;
   }
 };
 
@@ -178,6 +202,10 @@ struct FunctionCallAST : ExpressionAST {
       args_str.at(ind) = args.at(ind) -> pretty_show();
     }
     return fmt::format("FunctionCallAST {} ({})", id.lexeme, fmt::join(args_str, " "));
+  }
+
+  int get_priority() const {
+    return 9999;
   }
 };
 
@@ -337,6 +365,7 @@ class Parser {
   }
 
   ExpressionAST::Ptr handle_expr() {
+    // TODO: fix prioritization
     auto cur = peek();
     
     ExpressionAST::Ptr result = nullptr;
@@ -353,7 +382,7 @@ class Parser {
         result = std::make_unique<VariableAST>(cur);
       }
     }
-    
+
     if (cur.is_literal()) {
       Dprint("Literal\n");
       result = std::make_unique<LiteralAST>(cur);
@@ -372,8 +401,12 @@ class Parser {
       auto expr = handle_expr();
       move_cursor();
       assertion(peek().type == TOK_RIGHT_PAREN, "missing parentheses for grouping");
-      return std::make_unique<GroupingAST>(std::move(expr));
+      result = std::make_unique<GroupingAST>(std::move(expr));
     }
+
+    // -2 + 3
+    // right now: -(2 + 3)
+    // correct: (-2) + 3
 
     auto next = peek(1);
 
@@ -381,14 +414,45 @@ class Parser {
       Dprint("Binary {} \n", next.lexeme);
       move_cursor(2);
       auto rhs = handle_expr();
-      // TODO: fix prioritization
       result = std::make_unique<BinaryOperationAST>(std::move(result), next, std::move(rhs));
     }
+
+    balance_expr(result);
     
     if (!result)
       throw_exception("failed to parse expression");
     return result;
   }
+  
+  void balance_expr(ExpressionAST::Ptr& expr) {
+    balance_unary(expr);
+  }
+
+#define CAST(to_cast, type) &dynamic_cast<type&>(*to_cast.get())
+
+  void balance_unary(ExpressionAST::Ptr& expr) {
+    if (!expr) return;
+    // if expression is unary and rhs is binary then
+    // expression = 
+    //   Binary(Unary(expression -> op, expression -> rhs -> lhs),
+    //          expression -> rhs -> op,
+    //          expression rhs -> rhs);
+
+    try {
+      UnaryOperationAST*  un_expr = CAST(expr, UnaryOperationAST);
+      BinaryOperationAST* bin_rhs = CAST(un_expr -> rhs, BinaryOperationAST);
+      balance_expr(bin_rhs -> rhs);
+      balance_expr(un_expr -> rhs);
+      expr = std::make_unique<BinaryOperationAST>(
+        std::make_unique<UnaryOperationAST>(un_expr -> op, std::move(bin_rhs -> lhs)),
+        bin_rhs -> op,
+        std::move(bin_rhs -> rhs));
+    } catch (std::bad_cast& e) {
+      // TODO:
+    }
+  }
+
+#undef CAST
 
 public:
   ProgramAST::Ptr parse(std::vector<Token> input) {
