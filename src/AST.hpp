@@ -9,6 +9,24 @@
 #include <fmt/core.h>
 #include <fmt/ostream.h>
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
+
 #include "lexer.hpp"
 
 // Scope = '{' Statement* '}' 
@@ -27,7 +45,9 @@
 //            | UnaryOperation
 //            | Grouping
 //
-// FunctionDeclaration = 'fn' Identifier '(' Identifier* ')' Scope
+// FunctionPrototype   = 'fn' Identifier '(' VariableDeclaration* ')'
+//
+// FunctionDeclaration = FunctionPrototype Scope
 // 
 // Literal = Number 
 //         | String 
@@ -53,11 +73,22 @@
 struct AST { 
   typedef std::unique_ptr<AST> Ptr;
   virtual std::string pretty_show() const = 0;
+  virtual llvm::Value* codegen() = 0;
   virtual ~AST() { }
+
+  protected:
+//   static std::unique_ptr<LLVMContext> TheContext;
+//   static std::unique_ptr<Module> TheModule;
+//   static std::unique_ptr<IRBuilder<>> Builder;
+//   static std::map<std::string, Value *> NamedValues;
+//   static std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+//   static std::unique_ptr<KaleidoscopeJIT> TheJIT;
+//   static std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
 };
 
 struct StatementAST : AST {
   typedef std::unique_ptr<StatementAST> Ptr;
+
 };
 
 struct ScopeAST : AST {
@@ -77,13 +108,14 @@ struct ScopeAST : AST {
     return result;
   }
 
+  llvm::Value* codegen() override; 
 
   typedef std::unique_ptr<ScopeAST> Ptr;
 };
 
 struct ExpressionAST : StatementAST {
   typedef std::unique_ptr<ExpressionAST> Ptr; 
-  virtual int get_priority() const = 0;
+
 };
 
 struct VariableDeclarationAST : StatementAST {
@@ -99,6 +131,8 @@ struct VariableDeclarationAST : StatementAST {
       return fmt::format("VariableDeclarationAST {} = {}", id.lexeme, opt_expression -> pretty_show());
     return fmt::format("VariableDeclarationAST {}", id.lexeme);
   }
+
+  llvm::Value* codegen() override; 
 };
 
 struct LiteralAST : ExpressionAST {
@@ -108,9 +142,8 @@ struct LiteralAST : ExpressionAST {
   std::string pretty_show() const {
     return fmt::format("LiteralAST {}", value.lexeme);
   }
-  int get_priority() const {
-    return 0;
-  }
+
+  llvm::Value* codegen() override; 
 };
 
 struct VariableAST : ExpressionAST {
@@ -121,9 +154,7 @@ struct VariableAST : ExpressionAST {
     return fmt::format("VariableAST {}", id.lexeme);
   }
 
-  int get_priority() const {
-    return 0;
-  }
+  llvm::Value* codegen() override; 
 };
 
 struct BinaryOperationAST : ExpressionAST {
@@ -140,10 +171,7 @@ struct BinaryOperationAST : ExpressionAST {
     return fmt::format("({} {} {})", lhs -> pretty_show(), op.lexeme, rhs -> pretty_show());
   }
 
-  int get_priority() const {
-    // TODO:
-    return 0;
-  }
+  llvm::Value* codegen() override; 
 };
 
 struct UnaryOperationAST : ExpressionAST {
@@ -158,9 +186,7 @@ struct UnaryOperationAST : ExpressionAST {
     return fmt::format("({} {})", op.lexeme, rhs -> pretty_show());
   }
 
-  int get_priority() const {
-    return 99999;
-  }
+  llvm::Value* codegen() override; 
 };
 
 struct GroupingAST : ExpressionAST {
@@ -174,9 +200,7 @@ struct GroupingAST : ExpressionAST {
     return fmt::format("GroupingAST ({})", expr -> pretty_show());
   }
 
-  int get_priority() const {
-    return 99999;
-  }
+  llvm::Value* codegen() override; 
 };
 
 struct FunctionCallAST : ExpressionAST {
@@ -196,27 +220,45 @@ struct FunctionCallAST : ExpressionAST {
     return fmt::format("FunctionCallAST {} ({})", id.lexeme, fmt::join(args_str, " "));
   }
 
-  int get_priority() const {
-    return 9999;
-  }
+  llvm::Value* codegen() override; 
 };
 
-struct FunctionDeclarationAST : AST {
+struct FunctionPrototypeAST : AST {
   Token id;
-  std::vector<Token> parameters;
-  ScopeAST::Ptr body;
-  FunctionDeclarationAST(const Token& _id, const std::vector<Token>& _params, ScopeAST::Ptr&& _body)
-    : id(_id), parameters(_params) { 
-    body.reset(_body.release());
+  std::vector<VariableDeclarationAST::Ptr> parameters;
+
+  FunctionPrototypeAST(const Token& _id, std::vector<VariableDeclarationAST::Ptr>&& _params) 
+    : id (_id), parameters(_params.size()) {
+    for (size_t ind = 0; ind < _params.size(); ++ind) {
+      parameters[ind].reset(_params[ind].release());
+    }
   }
+
+  llvm::Value* codegen() override; 
 
   std::string pretty_show() const {
     std::vector<std::string> params(parameters.size());
     for (size_t ind = 0; ind < parameters.size(); ++ind) {
-      params.at(ind) = parameters.at(ind).lexeme;
+      params.at(ind) = parameters.at(ind)->pretty_show();
     }
-    return fmt::format("FunctionDeclarationAST {} ({}) {}", id.lexeme, fmt::join(params, " "), body -> pretty_show());
+    return fmt::format("FunctionPrototypeAST {} ({})", id.lexeme, fmt::join(params, "\n"));
   }
+  typedef std::unique_ptr<FunctionPrototypeAST> Ptr;
+};
+
+struct FunctionDeclarationAST : AST {
+  FunctionPrototypeAST::Ptr proto;
+  ScopeAST::Ptr body;
+  FunctionDeclarationAST(FunctionPrototypeAST::Ptr&& _proto, ScopeAST::Ptr&& _body) {
+    proto.reset(_proto.release());
+    body.reset(_body.release());
+  }
+
+  std::string pretty_show() const {
+    return fmt::format("FunctionDeclarationAST {} {}", proto -> pretty_show(), body -> pretty_show());
+  }
+
+  llvm::Value* codegen() override; 
 };
 
 struct ModuleAST : AST {
@@ -235,6 +277,8 @@ struct ModuleAST : AST {
     }
     return fmt::format("{}", fmt::join(func_str, "\n")); 
   }
+
+  llvm::Value* codegen() override; 
 
   typedef std::unique_ptr<ModuleAST> Ptr; 
 };

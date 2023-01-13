@@ -1,6 +1,6 @@
 #include "parser.hpp"
 
-FunctionDeclarationAST::Ptr Parser::handle_fn_decl() {
+FunctionPrototypeAST::Ptr Parser::handle_fn_proto() {
   assertion(peek().type == TOK_FN, "function declaration must start with fn");
   move_cursor();
   auto identifier = peek();
@@ -8,11 +8,16 @@ FunctionDeclarationAST::Ptr Parser::handle_fn_decl() {
   move_cursor();
   assertion(peek().type == TOK_LEFT_PAREN, "function declaration parameters missing left parenthesis");
   move_cursor();
-  auto params = take_while([](Token t){return t.type == TOK_IDENTIFIER;});
+  auto params = take_with(&Parser::handle_vd);
   assertion(peek().type == TOK_RIGHT_PAREN, "function declaration parameters missing right parenthesis");
+  return std::make_unique<FunctionPrototypeAST>(identifier, std::move(params)); 
+}
+
+FunctionDeclarationAST::Ptr Parser::handle_fn_decl() {
+  auto proto = handle_fn_proto();
   move_cursor();
   auto scope = handle_scope();
-  return std::make_unique<FunctionDeclarationAST>(identifier, params, std::move(scope)); 
+  return std::make_unique<FunctionDeclarationAST>(std::move(proto), std::move(scope)); 
 }
 
 ScopeAST::Ptr Parser::handle_scope() {
