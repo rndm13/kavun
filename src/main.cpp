@@ -65,12 +65,12 @@ void file_read(std::string file) {
   try {
     auto tokens = lexer.get_tokens(input);
     // fmt::print("{}\n", fmt::join(tokens, "\n")); // DEBUG
-    fmt::print("[LEXER PASS  ]\n");
+    fmt::print("[LEXER PASS]\n");
     auto ast = parser.parse(tokens);
     fmt::print("\n{}\n", ast -> pretty_show());
-    fmt::print("[PARSER PASS ]\n");
+    fmt::print("[PARSER PASS]\n");
   } catch (lexer_exception& e) {
-    fmt::print("[LEXER ERROR]   {}\n", e.what());
+    fmt::print("[LEXER ERROR]  {}\n", e.what());
     exit(LEXER_ERROR);
   } catch (parser_exception& e) {
     fmt::print("[PARSER ERROR]  {}\n", e.what());
