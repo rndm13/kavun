@@ -88,6 +88,7 @@ class Parser {
   ScopeAST::Ptr handle_scope(); 
   StatementAST::Ptr handle_statement(); 
   StatementAST::Ptr handle_vd();
+  ModuleAST::Ptr handle_module();
 
   ExpressionAST::Ptr handle_expr();
   
@@ -97,10 +98,6 @@ public:
   ModuleAST::Ptr parse(std::vector<Token> input) {
     tokens = input;
     current_ind = 0;
-    auto result = take_with(&Parser::handle_fn_decl);
-    if (current_ind + 1 < tokens.size()) {
-      throw_exception(fmt::format("failed to parse entire file. exception stack:\n{}", fmt::join(exception_stack, "\n")));
-    }
-    return std::make_unique<ModuleAST>(std::move(result));
+    return handle_module();
   }
 };

@@ -66,7 +66,8 @@
 //  
 // Grouping = '(' Expression ')' 
 //
-// Program = FunctionDeclaration*
+// Module = 'module' Name ';'
+//          FunctionDeclaration*
 
 // TODO: Move all ASTs to seperate file
 
@@ -262,9 +263,11 @@ struct FunctionDeclarationAST : AST {
 };
 
 struct ModuleAST : AST {
+  typedef std::unique_ptr<ModuleAST> Ptr;
+  Token name;
   std::vector<FunctionDeclarationAST::Ptr> functions;
 
-  ModuleAST(std::vector<FunctionDeclarationAST::Ptr>&& funcs) : functions(funcs.size()) {
+  ModuleAST(const Token& _name, std::vector<FunctionDeclarationAST::Ptr>&& funcs) : name(_name), functions(funcs.size()) {
     for (size_t ind = 0; ind < funcs.size(); ++ind) {
       functions.at(ind).reset(funcs.at(ind).release());
     }
@@ -279,7 +282,5 @@ struct ModuleAST : AST {
   }
 
   llvm::Value* codegen() override; 
-
-  typedef std::unique_ptr<ModuleAST> Ptr; 
 };
 

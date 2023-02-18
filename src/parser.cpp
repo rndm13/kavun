@@ -1,5 +1,23 @@
 #include "parser.hpp"
 
+ModuleAST::Ptr Parser::handle_module() {
+  assertion(peek().type == TOK_MODULE, "module must start with module declaration");
+  move_cursor();
+  assertion(peek().type == TOK_IDENTIFIER, "module must have a name");
+  auto name = peek();
+  move_cursor();
+  assertion(peek().type == TOK_SEMICOLON, "missing ';'");
+  move_cursor();
+
+  auto result = take_with(&Parser::handle_fn_decl);
+
+  move_cursor();
+  if (current_ind + 1 < tokens.size()) {
+    throw_exception(fmt::format("failed to parse entire file. exception stack:\n{}", fmt::join(exception_stack, "\n")));
+  }
+  return std::make_unique<ModuleAST>(name, std::move(result));
+}
+
 FunctionPrototypeAST::Ptr Parser::handle_fn_proto() {
   assertion(peek().type == TOK_FN, "function declaration must start with fn");
   move_cursor();

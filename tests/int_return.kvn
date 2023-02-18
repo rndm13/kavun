@@ -1,0 +1,7 @@
+fn some_num() i8 {
+  return 3;
+}
+
+fn main() i8 {
+  return some_num();
+}

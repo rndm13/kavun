@@ -1,0 +1,4 @@
+fn main() double {
+  var double t = 3;
+  return 3.14 + 3.14 + t;
+}

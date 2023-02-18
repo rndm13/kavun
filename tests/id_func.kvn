@@ -1,0 +1,3 @@
+fn id(var i64 x) i64 {
+  return x;
+}

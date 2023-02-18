@@ -47,6 +47,7 @@ enum TokenType {
   TOK_TRUE,
   TOK_VAR,
   TOK_WHILE,
+  TOK_MODULE,
   TOK_EOF,
   TOK_FAIL
 };
@@ -107,6 +108,7 @@ class Lexer {
       {"true", TOK_TRUE},
       {"var", TOK_VAR},
       {"while", TOK_WHILE},
+      {"module", TOK_MODULE},
   };
 
   std::vector<Token> tokens{};
