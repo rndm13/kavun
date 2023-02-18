@@ -31,7 +31,9 @@
 
 // Scope = '{' Statement* '}' 
 // 
-// Statement = (VariableDeclaration | Expression) ';' 
+// Statement = (VariableDeclaration | Expression | Return) ';' 
+//
+// Return = 'return' Expression
 //
 // a*  = a a*
 //     |  
@@ -122,8 +124,9 @@ struct ExpressionAST : StatementAST {
 struct VariableDeclarationAST : StatementAST {
   Token id;
   ExpressionAST::Ptr opt_expression{nullptr};
+  Token type;
 
-  VariableDeclarationAST(Token _id, ExpressionAST::Ptr&& _expr) : id(_id) {
+  VariableDeclarationAST(Token _type, Token _id, ExpressionAST::Ptr&& _expr) : id(_id), type(_type) {
     opt_expression.reset(_expr.release());
   }
 
@@ -224,12 +227,28 @@ struct FunctionCallAST : ExpressionAST {
   llvm::Value* codegen() override; 
 };
 
+struct ReturnAST : StatementAST {
+  typedef std::unique_ptr<StatementAST> Ptr;
+  ExpressionAST::Ptr opt_expression;
+  ReturnAST(ExpressionAST::Ptr&& _expression) 
+    : opt_expression(std::forward<ExpressionAST::Ptr>(_expression)) { }
+  llvm::Value* codegen() override;
+
+  std::string pretty_show() const {
+    if (opt_expression == nullptr) 
+      return "ReturnAST";
+    return fmt::format("ReturnAST {}", opt_expression -> pretty_show());
+  }
+
+};
+
 struct FunctionPrototypeAST : AST {
   Token id;
   std::vector<VariableDeclarationAST::Ptr> parameters;
+  Token return_type;
 
-  FunctionPrototypeAST(const Token& _id, std::vector<VariableDeclarationAST::Ptr>&& _params) 
-    : id (_id), parameters(_params.size()) {
+  FunctionPrototypeAST(const Token& _id, std::vector<VariableDeclarationAST::Ptr>&& _params, const Token& _return_type) 
+    : id (_id), parameters(_params.size()), return_type(_return_type) {
     for (size_t ind = 0; ind < _params.size(); ++ind) {
       parameters[ind].reset(_params[ind].release());
     }

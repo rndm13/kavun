@@ -28,7 +28,10 @@ FunctionPrototypeAST::Ptr Parser::handle_fn_proto() {
   move_cursor();
   auto params = take_with(&Parser::handle_vd);
   assertion(peek().type == TOK_RIGHT_PAREN, "function declaration parameters missing right parenthesis");
-  return std::make_unique<FunctionPrototypeAST>(identifier, std::move(params)); 
+  move_cursor();
+  assertion(peek().type == TOK_IDENTIFIER, "function declaration must have a return type");
+  auto return_type = peek();
+  return std::make_unique<FunctionPrototypeAST>(identifier, std::move(params), return_type); 
 }
 
 FunctionDeclarationAST::Ptr Parser::handle_fn_decl() {
@@ -53,26 +56,54 @@ StatementAST::Ptr Parser::handle_statement() {
   size_t old_ind = current_ind;
   try {
     result = handle_vd();
+    move_cursor();
+    assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+    return result; 
   } catch (parser_exception& e) {
     current_ind = old_ind;
+  } 
+  try {
     result = handle_expr();
+    move_cursor();
+    assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+    return result; 
+  } catch (parser_exception& e) {
+    current_ind = old_ind;
   }
+  try {
+    result = handle_return();
+    move_cursor();
+    assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+    return result; 
+  } catch (parser_exception& e) {
+    throw_exception("failed to parse statement");
+    return nullptr;
+  }
+}
+
+StatementAST::Ptr Parser::handle_return() {
+  assertion(peek().type == TOK_RETURN, "return must start with 'return'");
+  if (peek(1).type == TOK_SEMICOLON)
+    return std::make_unique<ReturnAST>(nullptr);
   move_cursor();
-  assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
-  return result; 
+  auto expr = handle_expr();
+  return std::make_unique<ReturnAST>(std::move(expr));
 }
 
 StatementAST::Ptr Parser::handle_vd() {
-  assertion(peek().type == TOK_VAR, "statements must be either variable declaration or expression");
+  assertion(peek().type == TOK_VAR, "variable declaration must start with 'var'");
   move_cursor();
+  assertion(peek().type == TOK_IDENTIFIER, "variable declaration must have a type");
+  auto type = peek();
+  move_cursor();
+  assertion(peek().type == TOK_IDENTIFIER, "variable name must be a valid identifier");
   auto id = peek();
-  assertion(id.type == TOK_IDENTIFIER, "variable name must be a valid identifier");
   if (peek(1).type == TOK_EQUAL) {
     move_cursor(2); 
     auto expr = handle_expr();
-    return std::make_unique<VariableDeclarationAST>(id, std::move(expr));
+    return std::make_unique<VariableDeclarationAST>(type, id, std::move(expr));
   }
-  return std::make_unique<VariableDeclarationAST>(id, nullptr);
+  return std::make_unique<VariableDeclarationAST>(type, id, nullptr);
 }
 
 ExpressionAST::Ptr Parser::handle_expr() {

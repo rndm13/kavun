@@ -87,6 +87,7 @@ class Parser {
   FunctionPrototypeAST::Ptr handle_fn_proto(); 
   ScopeAST::Ptr handle_scope(); 
   StatementAST::Ptr handle_statement(); 
+  StatementAST::Ptr handle_return(); 
   StatementAST::Ptr handle_vd();
   ModuleAST::Ptr handle_module();
 

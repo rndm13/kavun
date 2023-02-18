@@ -43,3 +43,7 @@ llvm::Value* FunctionDeclarationAST::codegen() {
 llvm::Value* ModuleAST::codegen() {
   return nullptr;
 }
+
+llvm::Value* ReturnAST::codegen() {
+  return nullptr;
+}
