@@ -63,7 +63,8 @@ StatementAST::Ptr Parser::handle_statement() {
     current_ind = old_ind;
   } 
   try {
-    result = handle_expr();
+    auto expr = handle_expr();
+    result = std::make_unique<SExpressionAST>(std::move(expr));
     move_cursor();
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
     return result; 
@@ -81,7 +82,7 @@ StatementAST::Ptr Parser::handle_statement() {
   }
 }
 
-StatementAST::Ptr Parser::handle_return() {
+ReturnAST::Ptr Parser::handle_return() {
   assertion(peek().type == TOK_RETURN, "return must start with 'return'");
   if (peek(1).type == TOK_SEMICOLON)
     return std::make_unique<ReturnAST>(nullptr);
@@ -90,7 +91,7 @@ StatementAST::Ptr Parser::handle_return() {
   return std::make_unique<ReturnAST>(std::move(expr));
 }
 
-StatementAST::Ptr Parser::handle_vd() {
+VariableDeclarationAST::Ptr Parser::handle_vd() {
   assertion(peek().type == TOK_VAR, "variable declaration must start with 'var'");
   move_cursor();
   assertion(peek().type == TOK_IDENTIFIER, "variable declaration must have a type");

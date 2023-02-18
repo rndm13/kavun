@@ -1,11 +1,14 @@
 #include "AST.hpp"
 
-llvm::Value* ScopeAST::codegen() {
-  return nullptr;
+void ScopeAST::codegen() {
 }
 
-llvm::Value* VariableDeclarationAST::codegen() {
-  return nullptr;
+void VariableDeclarationAST::codegen() {
+
+}
+
+void SExpressionAST::codegen() {
+  expr -> codegen();
 }
 
 llvm::Value* LiteralAST::codegen() {
@@ -32,18 +35,17 @@ llvm::Value* FunctionCallAST::codegen() {
   return nullptr;
 }
 
-llvm::Value* FunctionPrototypeAST::codegen() {
+llvm::Function* FunctionPrototypeAST::codegen() {
   return nullptr;
 }
 
-llvm::Value* FunctionDeclarationAST::codegen() {
+llvm::Function* FunctionDeclarationAST::codegen() {
   return nullptr;
 }
 
-llvm::Value* ModuleAST::codegen() {
+llvm::Module* ModuleAST::codegen() {
   return nullptr;
 }
 
-llvm::Value* ReturnAST::codegen() {
-  return nullptr;
+void ReturnAST::codegen() {
 }

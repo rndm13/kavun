@@ -71,29 +71,21 @@
 // Module = 'module' Name ';'
 //          FunctionDeclaration*
 
-// TODO: Move all ASTs to seperate file
+// std::unique_ptr<LLVMContext> TheContext;
+// std::unique_ptr<Module> TheModule;
+// std::unique_ptr<IRBuilder<>> Builder;
+// std::map<std::string, Value *> NamedValues;
+// std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+// std::unique_ptr<KaleidoscopeJIT> TheJIT;
+// std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
 
-struct AST { 
-  typedef std::unique_ptr<AST> Ptr;
-  virtual llvm::Value* codegen() = 0;
-  virtual ~AST() { }
-
-  protected:
-//   static std::unique_ptr<LLVMContext> TheContext;
-//   static std::unique_ptr<Module> TheModule;
-//   static std::unique_ptr<IRBuilder<>> Builder;
-//   static std::map<std::string, Value *> NamedValues;
-//   static std::unique_ptr<legacy::FunctionPassManager> TheFPM;
-//   static std::unique_ptr<KaleidoscopeJIT> TheJIT;
-//   static std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
-};
-
-struct StatementAST : AST {
+struct StatementAST {
   typedef std::unique_ptr<StatementAST> Ptr;
-
+  virtual ~StatementAST() {};
+  virtual void codegen() = 0;
 };
 
-struct ScopeAST : AST {
+struct ScopeAST {
   std::vector<StatementAST::Ptr> statements;
   ScopeAST(std::vector<StatementAST::Ptr>&& input) : statements(input.size()) { 
     for (size_t ind = 0;ind < input.size(); ++ind) {
@@ -101,17 +93,30 @@ struct ScopeAST : AST {
     }
   } 
 
-  llvm::Value* codegen() override; 
+  void codegen(); 
 
   typedef std::unique_ptr<ScopeAST> Ptr;
 };
 
-struct ExpressionAST : StatementAST {
+struct ExpressionAST {
   typedef std::unique_ptr<ExpressionAST> Ptr; 
+  
+  virtual ~ExpressionAST() {};
+  virtual llvm::Value* codegen() = 0;
+};
 
+// Statement Expression not lisp's "s-expression"
+struct SExpressionAST : StatementAST { 
+  typedef std::unique_ptr<SExpressionAST> Ptr;
+  ExpressionAST::Ptr expr;
+  SExpressionAST(ExpressionAST::Ptr&& _expr) 
+    : expr(std::forward<ExpressionAST::Ptr>(_expr)) { }
+
+  void codegen() override;
 };
 
 struct VariableDeclarationAST : StatementAST {
+  typedef std::unique_ptr<VariableDeclarationAST> Ptr;
   Token id;
   ExpressionAST::Ptr opt_expression{nullptr};
   Token type;
@@ -120,10 +125,11 @@ struct VariableDeclarationAST : StatementAST {
     opt_expression.reset(_expr.release());
   }
 
-  llvm::Value* codegen() override; 
+  void codegen() override; 
 };
 
 struct LiteralAST : ExpressionAST {
+  typedef std::unique_ptr<LiteralAST> Ptr;
   Token value;
   LiteralAST(const Token& t) : value(t) { }
 
@@ -131,6 +137,7 @@ struct LiteralAST : ExpressionAST {
 };
 
 struct VariableAST : ExpressionAST {
+  typedef std::unique_ptr<VariableAST> Ptr;
   Token id;
   VariableAST(const Token& t) : id(t) { }
 
@@ -138,6 +145,7 @@ struct VariableAST : ExpressionAST {
 };
 
 struct BinaryOperationAST : ExpressionAST {
+  typedef std::unique_ptr<BinaryOperationAST> Ptr;
   ExpressionAST::Ptr lhs, rhs;
   Token op;
 
@@ -150,6 +158,7 @@ struct BinaryOperationAST : ExpressionAST {
 };
 
 struct UnaryOperationAST : ExpressionAST {
+  typedef std::unique_ptr<UnaryOperationAST> Ptr;
   Token op;
   ExpressionAST::Ptr rhs;
   UnaryOperationAST(const Token& t, ExpressionAST::Ptr&& _rhs) : op(t) {
@@ -160,6 +169,7 @@ struct UnaryOperationAST : ExpressionAST {
 };
 
 struct GroupingAST : ExpressionAST {
+  typedef std::unique_ptr<GroupingAST> Ptr;
   ExpressionAST::Ptr expr;
 
   GroupingAST(ExpressionAST::Ptr&& _expr) {
@@ -170,6 +180,8 @@ struct GroupingAST : ExpressionAST {
 };
 
 struct FunctionCallAST : ExpressionAST {
+  typedef std::unique_ptr<FunctionCallAST> Ptr;
+
   Token id;
   std::vector<ExpressionAST::Ptr> args;
   FunctionCallAST(const Token& _id, std::vector<ExpressionAST::Ptr>&& input) : id(_id), args(input.size()) { 
@@ -182,15 +194,17 @@ struct FunctionCallAST : ExpressionAST {
 };
 
 struct ReturnAST : StatementAST {
-  typedef std::unique_ptr<StatementAST> Ptr;
+  typedef std::unique_ptr<ReturnAST> Ptr;
   ExpressionAST::Ptr opt_expression;
   ReturnAST(ExpressionAST::Ptr&& _expression) 
     : opt_expression(std::forward<ExpressionAST::Ptr>(_expression)) { }
-  llvm::Value* codegen() override;
 
+  void codegen() override;
 };
 
-struct FunctionPrototypeAST : AST {
+struct FunctionPrototypeAST {
+  typedef std::unique_ptr<FunctionPrototypeAST> Ptr;
+
   Token id;
   std::vector<VariableDeclarationAST::Ptr> parameters;
   Token return_type;
@@ -202,12 +216,12 @@ struct FunctionPrototypeAST : AST {
     }
   }
 
-  llvm::Value* codegen() override; 
-
-  typedef std::unique_ptr<FunctionPrototypeAST> Ptr;
+  llvm::Function* codegen(); 
 };
 
-struct FunctionDeclarationAST : AST {
+struct FunctionDeclarationAST {
+  typedef std::unique_ptr<FunctionDeclarationAST> Ptr;
+
   FunctionPrototypeAST::Ptr proto;
   ScopeAST::Ptr body;
   FunctionDeclarationAST(FunctionPrototypeAST::Ptr&& _proto, ScopeAST::Ptr&& _body) {
@@ -215,10 +229,10 @@ struct FunctionDeclarationAST : AST {
     body.reset(_body.release());
   }
 
-  llvm::Value* codegen() override; 
+  llvm::Function* codegen(); 
 };
 
-struct ModuleAST : AST {
+struct ModuleAST {
   typedef std::unique_ptr<ModuleAST> Ptr;
   Token name;
   std::vector<FunctionDeclarationAST::Ptr> functions;
@@ -229,6 +243,6 @@ struct ModuleAST : AST {
     }
   }
 
-  llvm::Value* codegen() override; 
+  llvm::Module* codegen(); 
 };
 
