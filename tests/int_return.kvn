@@ -1,3 +1,5 @@
+module test;
+
 fn some_num() i8 {
   return 3;
 }
