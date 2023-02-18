@@ -75,7 +75,6 @@
 
 struct AST { 
   typedef std::unique_ptr<AST> Ptr;
-  virtual std::string pretty_show() const = 0;
   virtual llvm::Value* codegen() = 0;
   virtual ~AST() { }
 
@@ -102,15 +101,6 @@ struct ScopeAST : AST {
     }
   } 
 
-  std::string pretty_show() const {
-    std::string result = "ScopeAST {\n";
-    for (auto& st : statements) {
-      result += st -> pretty_show() + "\n";
-    }
-    result += "}\n";
-    return result;
-  }
-
   llvm::Value* codegen() override; 
 
   typedef std::unique_ptr<ScopeAST> Ptr;
@@ -130,12 +120,6 @@ struct VariableDeclarationAST : StatementAST {
     opt_expression.reset(_expr.release());
   }
 
-  std::string pretty_show() const {
-    if (opt_expression)
-      return fmt::format("VariableDeclarationAST {} = {}", id.lexeme, opt_expression -> pretty_show());
-    return fmt::format("VariableDeclarationAST {}", id.lexeme);
-  }
-
   llvm::Value* codegen() override; 
 };
 
@@ -143,20 +127,12 @@ struct LiteralAST : ExpressionAST {
   Token value;
   LiteralAST(const Token& t) : value(t) { }
 
-  std::string pretty_show() const {
-    return fmt::format("LiteralAST {}", value.lexeme);
-  }
-
   llvm::Value* codegen() override; 
 };
 
 struct VariableAST : ExpressionAST {
   Token id;
   VariableAST(const Token& t) : id(t) { }
-
-  std::string pretty_show() const {
-    return fmt::format("VariableAST {}", id.lexeme);
-  }
 
   llvm::Value* codegen() override; 
 };
@@ -170,11 +146,6 @@ struct BinaryOperationAST : ExpressionAST {
     rhs.reset(_rhs.release());
   }
 
-  std::string pretty_show() const {
-    // return fmt::format("BinaryOperationAST {} {} {}", lhs -> pretty_show(), op.lexeme, rhs -> pretty_show());
-    return fmt::format("({} {} {})", lhs -> pretty_show(), op.lexeme, rhs -> pretty_show());
-  }
-
   llvm::Value* codegen() override; 
 };
 
@@ -185,11 +156,6 @@ struct UnaryOperationAST : ExpressionAST {
     rhs.reset(_rhs.release());
   }
 
-  std::string pretty_show() const {
-    // return fmt::format("UnaryOperationAST {} {}", op.lexeme, rhs -> pretty_show());
-    return fmt::format("({} {})", op.lexeme, rhs -> pretty_show());
-  }
-
   llvm::Value* codegen() override; 
 };
 
@@ -198,10 +164,6 @@ struct GroupingAST : ExpressionAST {
 
   GroupingAST(ExpressionAST::Ptr&& _expr) {
     expr.reset(_expr.release());
-  }
-
-  std::string pretty_show() const {
-    return fmt::format("GroupingAST ({})", expr -> pretty_show());
   }
 
   llvm::Value* codegen() override; 
@@ -216,14 +178,6 @@ struct FunctionCallAST : ExpressionAST {
     }
   }
 
-  std::string pretty_show() const {
-    std::vector<std::string> args_str(args.size());
-    for (size_t ind = 0; ind < args.size(); ++ind) {
-      args_str.at(ind) = args.at(ind) -> pretty_show();
-    }
-    return fmt::format("FunctionCallAST {} ({})", id.lexeme, fmt::join(args_str, " "));
-  }
-
   llvm::Value* codegen() override; 
 };
 
@@ -233,12 +187,6 @@ struct ReturnAST : StatementAST {
   ReturnAST(ExpressionAST::Ptr&& _expression) 
     : opt_expression(std::forward<ExpressionAST::Ptr>(_expression)) { }
   llvm::Value* codegen() override;
-
-  std::string pretty_show() const {
-    if (opt_expression == nullptr) 
-      return "ReturnAST";
-    return fmt::format("ReturnAST {}", opt_expression -> pretty_show());
-  }
 
 };
 
@@ -256,13 +204,6 @@ struct FunctionPrototypeAST : AST {
 
   llvm::Value* codegen() override; 
 
-  std::string pretty_show() const {
-    std::vector<std::string> params(parameters.size());
-    for (size_t ind = 0; ind < parameters.size(); ++ind) {
-      params.at(ind) = parameters.at(ind)->pretty_show();
-    }
-    return fmt::format("FunctionPrototypeAST {} ({})", id.lexeme, fmt::join(params, "\n"));
-  }
   typedef std::unique_ptr<FunctionPrototypeAST> Ptr;
 };
 
@@ -272,10 +213,6 @@ struct FunctionDeclarationAST : AST {
   FunctionDeclarationAST(FunctionPrototypeAST::Ptr&& _proto, ScopeAST::Ptr&& _body) {
     proto.reset(_proto.release());
     body.reset(_body.release());
-  }
-
-  std::string pretty_show() const {
-    return fmt::format("FunctionDeclarationAST {} {}", proto -> pretty_show(), body -> pretty_show());
   }
 
   llvm::Value* codegen() override; 
@@ -290,14 +227,6 @@ struct ModuleAST : AST {
     for (size_t ind = 0; ind < funcs.size(); ++ind) {
       functions.at(ind).reset(funcs.at(ind).release());
     }
-  }
-
-  std::string pretty_show() const {
-    std::vector<std::string> func_str(functions.size());
-    for (size_t ind = 0; ind < functions.size(); ++ind) {
-      func_str.at(ind) = functions.at(ind) -> pretty_show();
-    }
-    return fmt::format("{}", fmt::join(func_str, "\n")); 
   }
 
   llvm::Value* codegen() override; 
