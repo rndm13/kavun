@@ -123,7 +123,7 @@ class Lexer {
   size_t cur_line{1};
 
   static bool isalphanumeric(char c) {
-    return std::isalpha(c) || std::isdigit(c);
+    return std::isalpha(c) || std::isdigit(c) || c == '_';
   }
 
   void move_cursor(size_t to_move = 1) {
