@@ -47,7 +47,18 @@ llvm::Value* BinaryOperationAST::codegen(Interpreter* interp) {
 }
 
 llvm::Value* UnaryOperationAST::codegen(Interpreter* interp) {
-  return nullptr;
+  llvm::Value* rhs_eval = rhs -> codegen(interp);
+  
+  // TODO: add for different types
+  // e.g. CreateFNeg for float
+  switch (op.type) {
+    case TOK_MINUS:
+      return interp -> the_builder -> 
+        CreateNeg(rhs_eval, "negtmp");
+    default: 
+      throw std::runtime_error(fmt::format("Unknown unary operator '{}'", op.lexeme));
+      return nullptr;
+  }
 }
 
 llvm::Value* GroupingAST::codegen(Interpreter* interp) {
