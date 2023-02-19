@@ -48,9 +48,8 @@ struct ScopeAST {
     }
   } 
 
-  void codegen(Interpreter*); 
+  llvm::BasicBlock* codegen(Interpreter*); 
 
-  std::unique_ptr<llvm::IRBuilder<>> the_builder;
   std::map<std::string, llvm::Value*> named_values;
 };
 
@@ -213,9 +212,11 @@ public:
     return info.c_str();
   }
 };
+
 class Interpreter {
 public:
   std::unique_ptr<llvm::LLVMContext> the_context;
+  std::unique_ptr<llvm::IRBuilder<>> the_builder;
 
   // TODO: add global scope
   std::stack<ScopeAST*> scope_stack;
@@ -238,15 +239,8 @@ public:
     return current_module -> the_module.get();
   }
 
-  std::unique_ptr<llvm::IRBuilder<>> the_builder;
   llvm::IRBuilder<>* get_builder() {
-    try {
-      return scope_stack.top() -> the_builder.get();
-    } catch (std::exception& e) {
-      if (!the_builder)
-        the_builder = std::make_unique<llvm::IRBuilder<>>(*the_context);
-      return the_builder.get();
-    }
+    return the_builder.get();
   }
 
   llvm::Value* get_named_value(Token identifier) {
@@ -297,6 +291,7 @@ public:
   Interpreter(ModuleAST::Ptr&& _module) 
     : current_module(std::forward<ModuleAST::Ptr>(_module)) {
     the_context = std::make_unique<llvm::LLVMContext>();
+    the_builder = std::make_unique<llvm::IRBuilder<>>(*the_context);
     type_lookup["i32"] = llvm::Type::getInt32Ty(*the_context);
     type_lookup["void"] = llvm::Type::getVoidTy(*the_context);
     // TODO: add more types

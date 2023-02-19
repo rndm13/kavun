@@ -1,6 +1,12 @@
 #include "AST.hpp"
 
-void ScopeAST::codegen(Interpreter* interp) {
+llvm::BasicBlock* ScopeAST::codegen(Interpreter* interp) {
+  auto builder = interp -> get_builder();
+  llvm::BasicBlock *block = 
+    llvm::BasicBlock::Create(
+        *interp -> the_context,
+        "scope_entry");
+  return block;
 }
 
 void VariableDeclarationAST::codegen(Interpreter* interp) {
@@ -63,7 +69,8 @@ llvm::Function* FunctionPrototypeAST::codegen(Interpreter* interp) {
 }
 
 llvm::Function* FunctionDeclarationAST::codegen(Interpreter* interp) {
-  return proto -> codegen(interp);
+  auto func = proto -> codegen(interp);
+  
 }
 
 std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
