@@ -55,7 +55,7 @@ enum TokenType {
 // Possible types of data:
 // string, double, bool, null
 
-typedef std::variant<std::monostate, std::string, double, bool> Literal;
+typedef std::variant<std::monostate, std::string, double, bool, std::uint32_t> Literal;
 
 class Token {
 public:

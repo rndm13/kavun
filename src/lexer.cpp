@@ -70,7 +70,8 @@ void Lexer::scan_token() {
 }
 
 void Lexer::handle_number() {
-  move_while([this, point = false](char c) mutable {
+  bool point = false;
+  move_while([this, &point](char c) mutable {
         if (c == '.') {
           if (point) throw_exception("Number with 2 floating points");
 
@@ -80,9 +81,15 @@ void Lexer::handle_number() {
         return std::isdigit(c) != 0;
       }); // Move while characters are digit (skips a single point)
   try {
-    double result;
-    result = std::stod(get_cur_lexeme());
-    add_token(TOK_NUMBER, get_cur_lexeme(), result);
+    if (point) {
+      double result;
+      result = std::stod(get_cur_lexeme());
+      add_token(TOK_NUMBER, get_cur_lexeme(), result);
+    } else {
+      uint32_t result;
+      result = std::stoi(get_cur_lexeme());
+      add_token(TOK_NUMBER, get_cur_lexeme(), result);
+    }
   } catch (std::invalid_argument& e) {
     throw_exception(fmt::format("Couldn't parse a number '{}'", get_cur_lexeme()));
   } catch (std::out_of_range& e) {
