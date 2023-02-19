@@ -57,15 +57,19 @@ void file_read(std::string file) {
   } catch (lexer_exception& e) {
     fmt::print("[LEXER ERROR]  {}\n", e.what());
     exit(LEXER_ERROR);
+
   } catch (parser_exception& e) {
     fmt::print("[PARSER ERROR]  {}\n", e.what());
     exit(PARSER_ERROR);
+
   } catch (interpreter_exception& e) {
     fmt::print("[INTERPRETER ERROR]  {}\n", e.what());
     exit(INTERPRETER_ERROR);
+
   } catch (std::exception& e) {
     fmt::print("[UNEXPECTED ERROR]  {}\n", e.what());
     exit(UNEXPECTED_ERROR);
+
   }
 }
 

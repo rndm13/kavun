@@ -298,6 +298,7 @@ public:
     : current_module(std::forward<ModuleAST::Ptr>(_module)) {
     the_context = std::make_unique<llvm::LLVMContext>();
     type_lookup["i32"] = llvm::Type::getInt32Ty(*the_context);
+    type_lookup["void"] = llvm::Type::getVoidTy(*the_context);
     // TODO: add more types
   }
 

@@ -4,7 +4,6 @@ void ScopeAST::codegen(Interpreter* interp) {
 }
 
 void VariableDeclarationAST::codegen(Interpreter* interp) {
-
 }
 
 void SExpressionAST::codegen(Interpreter* interp) {
@@ -36,11 +35,35 @@ llvm::Value* FunctionCallAST::codegen(Interpreter* interp) {
 }
 
 llvm::Function* FunctionPrototypeAST::codegen(Interpreter* interp) {
-  return nullptr;
+  // setting parameter types
+  std::vector<llvm::Type*> parameter_types{};
+  parameter_types.reserve(parameters.size());
+  for (auto& param : parameters) 
+    parameter_types.push_back(interp -> get_type(param -> type));
+
+  // return type
+  llvm::Type* rt = interp -> get_type(return_type);
+
+  // function signature
+  llvm::FunctionType* func_type = 
+    llvm::FunctionType::get(
+        rt,
+        parameter_types,
+        false);
+  
+  // function
+  llvm::Function* func = 
+    llvm::Function::Create(
+        func_type,
+        llvm::Function::ExternalLinkage,
+        id.lexeme,
+        interp -> get_module());
+
+  return func;
 }
 
 llvm::Function* FunctionDeclarationAST::codegen(Interpreter* interp) {
-  return nullptr;
+  return proto -> codegen(interp);
 }
 
 std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
