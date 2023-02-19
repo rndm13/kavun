@@ -70,11 +70,19 @@ llvm::Function* FunctionPrototypeAST::codegen(Interpreter* interp) {
 
 llvm::Function* FunctionDeclarationAST::codegen(Interpreter* interp) {
   auto func = proto -> codegen(interp);
-  
+  auto scope = body -> codegen(interp);
+ 
+  scope -> insertInto(func);
+
+  interp -> the_builder -> SetInsertPoint(scope);
+  return func;
 }
 
 std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
   the_module = std::make_unique<llvm::Module>(name.lexeme, *interp -> the_context);
+  for (auto& func : functions) {
+    func -> codegen(interp);
+  }
   return std::move(the_module);
 }
 
