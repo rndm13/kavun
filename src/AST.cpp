@@ -143,6 +143,11 @@ llvm::Function* FunctionPrototypeAST::codegen(Interpreter* interp) {
   return func;
 }
 
+llvm::Function* ExternFunctionAST::codegen(Interpreter* interp) {
+  auto func = proto -> codegen(interp);
+  return func;
+}
+
 llvm::Function* FunctionDeclarationAST::codegen(Interpreter* interp) {
   auto func = proto -> codegen(interp);
 

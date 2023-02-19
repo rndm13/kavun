@@ -25,6 +25,12 @@ TopLevelAST::Ptr Parser::handle_top_level() {
     result = handle_fn_decl();
     return result; 
   } catch (parser_exception& e) {
+    current_ind = old_ind;
+  }
+  try {
+    result = handle_extern_fn();
+    return result; 
+  } catch (parser_exception& e) {
     throw_exception("failed to parse top level");
     return nullptr;
   }
@@ -32,19 +38,28 @@ TopLevelAST::Ptr Parser::handle_top_level() {
 }
 
 FunctionPrototypeAST::Ptr Parser::handle_fn_proto() {
-  assertion(peek().type == TOK_FN, "function declaration must start with fn");
+  assertion(peek().type == TOK_FN, "function prototype must start with fn");
   move_cursor();
   auto identifier = peek();
   assertion(identifier.type == TOK_IDENTIFIER, "function name must be a valid identifier");
   move_cursor();
-  assertion(peek().type == TOK_LEFT_PAREN, "function declaration parameters missing left parenthesis");
+  assertion(peek().type == TOK_LEFT_PAREN, "function prototype parameters missing left parenthesis");
   move_cursor();
   auto params = take_with(&Parser::handle_vd);
-  assertion(peek().type == TOK_RIGHT_PAREN, "function declaration parameters missing right parenthesis");
+  assertion(peek().type == TOK_RIGHT_PAREN, "function prototype parameters missing right parenthesis");
   move_cursor();
-  assertion(peek().type == TOK_IDENTIFIER, "function declaration must have a return type");
+  assertion(peek().type == TOK_IDENTIFIER, "function prototype must have a return type");
   auto return_type = peek();
   return std::make_unique<FunctionPrototypeAST>(identifier, std::move(params), return_type); 
+}
+
+ExternFunctionAST::Ptr Parser::handle_extern_fn() {
+  assertion(peek().type == TOK_EXTERN, "external function declaration must start with 'extern'");
+  move_cursor();
+  auto proto = handle_fn_proto();
+  move_cursor();
+  assertion(peek().type == TOK_SEMICOLON, "missing semicolon");
+  return std::make_unique<ExternFunctionAST>(std::move(proto)); 
 }
 
 FunctionDeclarationAST::Ptr Parser::handle_fn_decl() {

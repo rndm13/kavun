@@ -180,6 +180,16 @@ struct TopLevelAST {
   virtual llvm::Function* codegen(Interpreter*) = 0;
 };
 
+struct ExternFunctionAST : TopLevelAST {
+  typedef std::unique_ptr<ExternFunctionAST> Ptr;
+
+  FunctionPrototypeAST::Ptr proto;
+  ExternFunctionAST(FunctionPrototypeAST::Ptr&& _proto) 
+    : proto(std::forward<FunctionPrototypeAST::Ptr>(_proto)) { }
+
+  llvm::Function* codegen(Interpreter*) override; 
+};
+
 struct FunctionDeclarationAST : TopLevelAST {
   typedef std::unique_ptr<FunctionDeclarationAST> Ptr;
 

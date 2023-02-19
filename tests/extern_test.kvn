@@ -1,0 +1,7 @@
+module extern_test;
+
+extern fn print_int(var i32 num) void;
+
+fn main() void {
+  print_int(20);
+}

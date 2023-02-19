@@ -85,6 +85,7 @@ class Parser {
 
   TopLevelAST::Ptr handle_top_level();
   FunctionDeclarationAST::Ptr handle_fn_decl(); 
+  ExternFunctionAST::Ptr handle_extern_fn(); 
   FunctionPrototypeAST::Ptr handle_fn_proto(); 
   ScopeAST::Ptr handle_scope(); 
   StatementAST::Ptr handle_statement(); 
