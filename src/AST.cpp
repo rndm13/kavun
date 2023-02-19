@@ -1,7 +1,6 @@
 #include "AST.hpp"
 
 llvm::BasicBlock* ScopeAST::codegen(Interpreter* interp) {
-  auto builder = interp -> get_builder();
   llvm::BasicBlock *block = 
     llvm::BasicBlock::Create(
         *interp -> the_context,
@@ -24,8 +23,13 @@ void SExpressionAST::codegen(Interpreter* interp) {
 }
 
 llvm::Value* LiteralAST::codegen(Interpreter* interp) {
+  if (std::holds_alternative<std::uint32_t>(value.literal)) {
+    return interp -> the_builder -> 
+      getInt32(std::get<std::uint32_t>(value.literal)); // TODO: move this to int64 
+  } 
+  throw interpreter_exception(value, "not implemented yet");
   return nullptr;
-}
+};
 
 llvm::Value* VariableAST::codegen(Interpreter* interp) {
   return nullptr;
@@ -98,9 +102,9 @@ std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
 }
 
 void ReturnAST::codegen(Interpreter* interp) {
-  interp -> the_builder -> CreateRetVoid();
   if (opt_expression) {
-    // TODO: add expression codegen
+    interp -> the_builder -> CreateRet(opt_expression -> codegen(interp));
+  } else {
     interp -> the_builder -> CreateRetVoid();
   }
 }
