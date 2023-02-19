@@ -310,7 +310,10 @@ public:
     the_builder = std::make_unique<llvm::IRBuilder<>>(*the_context);
     type_lookup["i32"] = llvm::Type::getInt32Ty(*the_context);
     type_lookup["void"] = llvm::Type::getVoidTy(*the_context);
-    // TODO: add more types
+    // TODO: change string to a class
+    type_lookup["string"] = 
+      llvm::PointerType::get(llvm::Type::getInt8Ty(*the_context), 0); 
+    // TODO: add double
   }
 
   std::unique_ptr<llvm::Module>&& run() {

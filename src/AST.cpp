@@ -33,7 +33,15 @@ llvm::Value* LiteralAST::codegen(Interpreter* interp) {
   if (std::holds_alternative<std::uint32_t>(value.literal)) {
     return interp -> the_builder -> 
       getInt32(std::get<std::uint32_t>(value.literal)); // TODO: move this to int64 
-  } 
+  }
+  if (std::holds_alternative<std::string>(value.literal)) {
+    return interp -> the_builder ->
+      CreateGlobalStringPtr(
+          std::get<std::string>(value.literal),
+          "strtmp",
+          0,
+          interp -> get_module());
+  }
   throw interpreter_exception(value, "not implemented yet");
   return nullptr;
 };

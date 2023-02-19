@@ -1,0 +1,10 @@
+module string_test;
+
+fn cool_string() string {
+  return "Hello world!";
+}
+
+fn main() void {
+  cool_string();
+  return;
+}
