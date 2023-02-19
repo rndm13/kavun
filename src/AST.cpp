@@ -6,6 +6,13 @@ llvm::BasicBlock* ScopeAST::codegen(Interpreter* interp) {
     llvm::BasicBlock::Create(
         *interp -> the_context,
         "scope_entry");
+
+  interp -> the_builder -> SetInsertPoint(block);
+
+  for (auto& stat : statements) {
+    stat -> codegen(interp);
+  }
+
   return block;
 }
 
@@ -78,7 +85,6 @@ llvm::Function* FunctionDeclarationAST::codegen(Interpreter* interp) {
   auto scope = body -> codegen(interp);
  
   scope -> insertInto(func);
-  interp -> the_builder -> SetInsertPoint(scope);
 
   return func;
 }
@@ -92,5 +98,9 @@ std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
 }
 
 void ReturnAST::codegen(Interpreter* interp) {
-
+  interp -> the_builder -> CreateRetVoid();
+  if (opt_expression) {
+    // TODO: add expression codegen
+    interp -> the_builder -> CreateRetVoid();
+  }
 }
