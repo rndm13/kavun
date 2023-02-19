@@ -4,6 +4,6 @@ fn sin() i32 {
   return 42;
 }
 
-fn main() {
+fn main() i32 {
   return sin() + sin();
 }

@@ -43,7 +43,34 @@ llvm::Value* VariableAST::codegen(Interpreter* interp) {
 }
 
 llvm::Value* BinaryOperationAST::codegen(Interpreter* interp) {
-  return nullptr;
+  llvm::Value* lhs_eval = lhs -> codegen(interp);
+  llvm::Value* rhs_eval = rhs -> codegen(interp);
+
+  auto* builder = interp -> the_builder.get();
+  
+  switch (op.type) {
+    break; case TOK_PLUS:
+      return builder -> CreateAdd(lhs_eval, rhs_eval, "addtmp");
+    break; case TOK_MINUS:
+      return builder -> CreateSub(lhs_eval, rhs_eval, "subtmp");
+    break; case TOK_STAR:
+      return builder -> CreateMul(lhs_eval, rhs_eval, "multmp");
+    break; case TOK_SLASH:
+      return builder -> CreateSDiv(lhs_eval, rhs_eval, "divtmp");
+    break; case TOK_OR:
+      return builder -> CreateOr(lhs_eval, rhs_eval, "ortmp");
+    break; case TOK_AND:
+      return builder -> CreateAnd(lhs_eval, rhs_eval, "andtmp");
+    // break; case TOK_LESS:
+    // break; case TOK_LESS_EQUAL:
+    // break; case TOK_GREATER:
+    // break; case TOK_GREATER_EQUAL:
+    // break; case TOK_BANG_EQUAL:
+    // break; case TOK_EQUAL_EQUAL:
+    break; default: 
+      throw std::runtime_error(fmt::format("Unknown binary operator '{}'", op.lexeme));
+      return nullptr;
+  }
 }
 
 llvm::Value* UnaryOperationAST::codegen(Interpreter* interp) {
@@ -52,10 +79,13 @@ llvm::Value* UnaryOperationAST::codegen(Interpreter* interp) {
   // TODO: add for different types
   // e.g. CreateFNeg for float
   switch (op.type) {
-    case TOK_MINUS:
+    break; case TOK_MINUS:
       return interp -> the_builder -> 
         CreateNeg(rhs_eval, "negtmp");
-    default: 
+    break; case TOK_BANG:
+      return interp -> the_builder -> 
+        CreateNot(rhs_eval, "nottmp");
+    break; default: 
       throw std::runtime_error(fmt::format("Unknown unary operator '{}'", op.lexeme));
       return nullptr;
   }

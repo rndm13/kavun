@@ -1,6 +1,6 @@
 module test;
 
-fn main() {
+fn main() i32 {
   var i32 a = 0;
   var i32 b = a + 1;
   var i32 c = b + 2;

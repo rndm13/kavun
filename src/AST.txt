@@ -33,7 +33,7 @@ BinaryOperator  = '+' | '-' | '/'  | '*'  | '='  | 'and' | 'or'
 FunctionCall = Identifier '(' Expression* ')'
 
 UnaryOperation = UnaryOperator Expression 
-UnaryOperator = '-'
+UnaryOperator = '-' | '!'
  
 Grouping = '(' Expression ')' 
 
