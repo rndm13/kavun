@@ -8,9 +8,13 @@ llvm::BasicBlock* ScopeAST::codegen(Interpreter* interp) {
 
   interp -> the_builder -> SetInsertPoint(block);
 
+  interp -> add_scope(this);
+
   for (auto& stat : statements) {
     stat -> codegen(interp);
   }
+
+  interp -> pop_scope();
 
   return block;
 }
@@ -32,7 +36,7 @@ llvm::Value* LiteralAST::codegen(Interpreter* interp) {
 };
 
 llvm::Value* VariableAST::codegen(Interpreter* interp) {
-  return nullptr;
+  return interp -> get_named_value(id);
 }
 
 llvm::Value* BinaryOperationAST::codegen(Interpreter* interp) {
