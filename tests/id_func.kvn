@@ -3,3 +3,7 @@ module test;
 fn id(var i32 x) i32 {
   return x;
 }
+
+fn main() i32 {
+  return id(4);
+}

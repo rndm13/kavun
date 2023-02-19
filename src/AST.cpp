@@ -55,7 +55,17 @@ llvm::Value* GroupingAST::codegen(Interpreter* interp) {
 }
 
 llvm::Value* FunctionCallAST::codegen(Interpreter* interp) {
-  return nullptr;
+
+  llvm::Function* func = interp -> get_function(id);
+  
+  std::vector<llvm::Value*> arg_vals;
+
+  arg_vals.reserve(args.size());
+  for (auto& arg : args) {
+    arg_vals.push_back(arg -> codegen(interp));
+  }
+
+  return interp -> the_builder -> CreateCall(func, arg_vals, "calltmp");
 }
 
 llvm::Function* FunctionPrototypeAST::codegen(Interpreter* interp) {
