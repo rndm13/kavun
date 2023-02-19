@@ -1,5 +1,5 @@
 module test;
 
-fn id(var i64 x) i64 {
+fn id(var i32 x) i32 {
   return x;
 }

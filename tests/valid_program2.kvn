@@ -1,17 +1,9 @@
 module test;
 
-fn sin() {
-  // TODO
-  // return 42;
+fn sin() i32 {
+  return 42;
 }
 
 fn main() {
-  var pi = 3.14;
-
-  var tau;
-  
-  tau = pi * 2;
-  var funcCall = sin(tau) + 2;
-
-  var group = -1 + 2;
+  return sin() + sin();
 }

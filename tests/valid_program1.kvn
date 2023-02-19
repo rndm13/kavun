@@ -1,7 +1,8 @@
 module test;
 
 fn main() {
-  var a = -1 + 2 / 3 * 2 - time() + dt;
-  // Expected: ((((-1) + ((2 / 3) * 2)) - time ()) + dt)
-  // 1: (- )
+  var i32 a = 0;
+  var i32 b = a + 1;
+  var i32 c = b + 2;
+  return c;
 }

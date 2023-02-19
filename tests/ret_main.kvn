@@ -1,7 +1,5 @@
 module test;
 
-fn main() char {
+fn main() i32 {
   return 0;
 }
-
-

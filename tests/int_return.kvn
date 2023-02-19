@@ -1,9 +1,9 @@
 module test;
 
-fn some_num() i8 {
+fn some_num() i32 {
   return 3;
 }
 
-fn main() i8 {
+fn main() i32 {
   return some_num();
 }
