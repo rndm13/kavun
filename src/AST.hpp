@@ -174,7 +174,13 @@ struct FunctionPrototypeAST {
   llvm::Function* codegen(Interpreter*); 
 };
 
-struct FunctionDeclarationAST {
+struct TopLevelAST {
+  typedef std::unique_ptr<TopLevelAST> Ptr;
+  virtual ~TopLevelAST() {}
+  virtual llvm::Function* codegen(Interpreter*) = 0;
+};
+
+struct FunctionDeclarationAST : TopLevelAST {
   typedef std::unique_ptr<FunctionDeclarationAST> Ptr;
 
   FunctionPrototypeAST::Ptr proto;
@@ -184,15 +190,15 @@ struct FunctionDeclarationAST {
     body.reset(_body.release());
   }
 
-  llvm::Function* codegen(Interpreter*); 
+  llvm::Function* codegen(Interpreter*) override; 
 };
 
 struct ModuleAST {
   typedef std::unique_ptr<ModuleAST> Ptr;
   Token name;
-  std::vector<FunctionDeclarationAST::Ptr> functions;
+  std::vector<TopLevelAST::Ptr> functions;
 
-  ModuleAST(const Token& _name, std::vector<FunctionDeclarationAST::Ptr>&& funcs) : name(_name), functions(funcs.size()) {
+  ModuleAST(const Token& _name, std::vector<TopLevelAST::Ptr>&& funcs) : name(_name), functions(funcs.size()) {
     for (size_t ind = 0; ind < funcs.size(); ++ind) {
       functions.at(ind).reset(funcs.at(ind).release());
     }

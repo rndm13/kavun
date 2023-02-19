@@ -9,13 +9,26 @@ ModuleAST::Ptr Parser::handle_module() {
   assertion(peek().type == TOK_SEMICOLON, "missing ';'");
   move_cursor();
 
-  auto result = take_with(&Parser::handle_fn_decl);
+  auto result = take_with(&Parser::handle_top_level);
 
   move_cursor();
   if (current_ind + 1 < tokens.size()) {
     throw_exception(fmt::format("failed to parse entire file. exception stack:\n{}", fmt::join(exception_stack, "\n")));
   }
   return std::make_unique<ModuleAST>(name, std::move(result));
+}
+
+TopLevelAST::Ptr Parser::handle_top_level() {
+  TopLevelAST::Ptr result;
+  size_t old_ind = current_ind;
+  try {
+    result = handle_fn_decl();
+    return result; 
+  } catch (parser_exception& e) {
+    throw_exception("failed to parse top level");
+    return nullptr;
+  }
+
 }
 
 FunctionPrototypeAST::Ptr Parser::handle_fn_proto() {

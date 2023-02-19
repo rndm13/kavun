@@ -83,6 +83,7 @@ class Parser {
     if (!condition) throw_exception(message);
   }
 
+  TopLevelAST::Ptr handle_top_level();
   FunctionDeclarationAST::Ptr handle_fn_decl(); 
   FunctionPrototypeAST::Ptr handle_fn_proto(); 
   ScopeAST::Ptr handle_scope(); 
