@@ -70,11 +70,16 @@ llvm::Function* FunctionPrototypeAST::codegen(Interpreter* interp) {
 
 llvm::Function* FunctionDeclarationAST::codegen(Interpreter* interp) {
   auto func = proto -> codegen(interp);
+
+  for (size_t i = 0; i < proto -> parameters.size(); ++i){
+    body -> named_values[proto -> parameters[i] -> id.lexeme] = func -> getArg(i);
+  }
+
   auto scope = body -> codegen(interp);
  
   scope -> insertInto(func);
-
   interp -> the_builder -> SetInsertPoint(scope);
+
   return func;
 }
 
