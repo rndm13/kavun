@@ -61,12 +61,18 @@ llvm::Value* BinaryOperationAST::codegen(Interpreter* interp) {
       return builder -> CreateOr(lhs_eval, rhs_eval, "ortmp");
     break; case TOK_AND:
       return builder -> CreateAnd(lhs_eval, rhs_eval, "andtmp");
-    // break; case TOK_LESS:
-    // break; case TOK_LESS_EQUAL:
-    // break; case TOK_GREATER:
-    // break; case TOK_GREATER_EQUAL:
-    // break; case TOK_BANG_EQUAL:
-    // break; case TOK_EQUAL_EQUAL:
+    break; case TOK_LESS:
+      return builder -> CreateICmpSLT(lhs_eval, rhs_eval, "lesstmp");
+    break; case TOK_LESS_EQUAL:
+      return builder -> CreateICmpSLE(lhs_eval, rhs_eval, "lesseqtmp");
+    break; case TOK_GREATER:
+      return builder -> CreateICmpSGT(lhs_eval, rhs_eval, "greattmp");
+    break; case TOK_GREATER_EQUAL:
+      return builder -> CreateICmpSGE(lhs_eval, rhs_eval, "greateqtmp");
+    break; case TOK_BANG_EQUAL:
+      return builder -> CreateICmpNE(lhs_eval, rhs_eval, "noteqtmp");
+    break; case TOK_EQUAL_EQUAL:
+      return builder -> CreateICmpEQ(lhs_eval, rhs_eval, "eqtmp");
     break; default: 
       throw std::runtime_error(fmt::format("Unknown binary operator '{}'", op.lexeme));
       return nullptr;
