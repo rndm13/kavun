@@ -213,7 +213,6 @@ public:
     return info.c_str();
   }
 };
-
 class Interpreter {
 public:
   std::unique_ptr<llvm::LLVMContext> the_context;

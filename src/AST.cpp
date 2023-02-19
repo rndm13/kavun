@@ -1,7 +1,6 @@
 #include "AST.hpp"
 
 void ScopeAST::codegen(Interpreter* interp) {
-
 }
 
 void VariableDeclarationAST::codegen(Interpreter* interp) {
@@ -45,7 +44,8 @@ llvm::Function* FunctionDeclarationAST::codegen(Interpreter* interp) {
 }
 
 std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
-  return nullptr;
+  the_module = std::make_unique<llvm::Module>(name.lexeme, *interp -> the_context);
+  return std::move(the_module);
 }
 
 void ReturnAST::codegen(Interpreter* interp) {

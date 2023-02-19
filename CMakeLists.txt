@@ -39,10 +39,10 @@ add_executable(${PROJECT_NAME} src/main.cpp)
 add_subdirectory(src)
 
 target_link_libraries(${PROJECT_NAME}
-  PRIVATE lexer parser
+  PRIVATE lexer parser AST
   PRIVATE fmt::fmt
   PRIVATE ${llvm_libs}
-  -fsanitize=address
+  -fsanitize=address # Debug only
   )
 
 # ------ tests -------

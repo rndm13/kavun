@@ -7,11 +7,14 @@
 
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "AST.hpp"
 
 enum Return_values : int {
   SUCCESS = 0,
   LEXER_ERROR = 1,
   PARSER_ERROR = 2,
+  INTERPRETER_ERROR = 3,
+  UNEXPECTED_ERROR = 4,
 };
 
 std::ostream& operator<<(std::ostream& os, const Token& t) {
@@ -29,28 +32,6 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
 
 template <> struct fmt::formatter<Token> : ostream_formatter {};
 
-// void repl() {
-//   std::string line;
-//   fmt::print("> ");
-//   Lexer lexer{};
-//   Parser parser{};
-//   while (std::getline(std::cin, line)) {
-//     try {
-//       auto tokens = lexer.get_tokens(line);
-//       // fmt::print("{}\n", fmt::join(tokens, "\n"));
-//       fmt::print("[LEXER PASS  ]\n");
-//       auto ast = parser.parse(tokens);
-//       fmt::print(ast -> pretty_show());
-//       fmt::print("[PARSER PASS ]\n");
-//     } catch (lexer_exception& e) {
-//       fmt::print("[LEXER ERROR ]  {}\n", e.what());
-//     } catch (parser_exception& e) {
-//       fmt::print("[PARSER ERROR]  {}\n", e.what());
-//     }
-//     fmt::print("> ");
-//   }
-// }
-
 std::string slurp(std::string file) {
   std::ifstream input(file);
   std::stringstream ss;
@@ -60,21 +41,31 @@ std::string slurp(std::string file) {
 
 void file_read(std::string file) {
   std::string input = slurp(file);
-  Lexer lexer{};
-  Parser parser{};
   try {
+    Lexer lexer{};
     auto tokens = lexer.get_tokens(input);
-    // fmt::print("{}\n", fmt::join(tokens, "\n")); // DEBUG
     fmt::print("[LEXER PASS]\n");
+
+    Parser parser{};
     auto ast = parser.parse(tokens);
-    // fmt::print("\n{}\n", ast -> pretty_show());
     fmt::print("[PARSER PASS]\n");
+
+    Interpreter interp(std::forward<ModuleAST::Ptr>(ast));
+    auto result = interp.run();
+    fmt::print("[INTERPRETER PASS]\n");
+    llvm::errs() << *result << '\n';
   } catch (lexer_exception& e) {
     fmt::print("[LEXER ERROR]  {}\n", e.what());
     exit(LEXER_ERROR);
   } catch (parser_exception& e) {
     fmt::print("[PARSER ERROR]  {}\n", e.what());
     exit(PARSER_ERROR);
+  } catch (interpreter_exception& e) {
+    fmt::print("[INTERPRETER ERROR]  {}\n", e.what());
+    exit(INTERPRETER_ERROR);
+  } catch (std::exception& e) {
+    fmt::print("[UNEXPECTED ERROR]  {}\n", e.what());
+    exit(UNEXPECTED_ERROR);
   }
 }
 
