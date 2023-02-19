@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <stack>
 
 #include <fmt/core.h>
 #include <fmt/ostream.h>
@@ -29,63 +30,17 @@
 
 #include "lexer.hpp"
 
-// Scope = '{' Statement* '}' 
-// 
-// Statement = (VariableDeclaration | Expression | Return) ';' 
-//
-// Return = 'return' Expression
-//
-// a*  = a a*
-//     |  
-// 
-// VariableDeclaration = 'var' Identifier ('=' Expression)? 
-//
-// Expression = Literal 
-//            | Variable
-//            | BinaryOperation
-//            | FunctionCall
-//            | UnaryOperation
-//            | Grouping
-//
-// FunctionPrototype   = 'fn' Identifier '(' VariableDeclaration* ')'
-//
-// FunctionDeclaration = FunctionPrototype Scope
-// 
-// Literal = Number 
-//         | String 
-//         | Bool 
-//         | Null
-// 
-// BinaryOperation = Expression BinaryOperator Expression 
-//
-// BinaryOperator  = '+' | '-' | '/'  | '*'  | '='  | 'and' | 'or'
-//                 | '>' | '<' | '>=' | '<=' | '=='
-//
-// FunctionCall = Identifier '(' Expression* ')'
-// 
-// UnaryOperation = UnaryOperator Expression 
-// UnaryOperator = '-'
-//  
-// Grouping = '(' Expression ')' 
-//
-// Module = 'module' Name ';'
-//          FunctionDeclaration*
-
-// std::unique_ptr<LLVMContext> TheContext;
-// std::unique_ptr<Module> TheModule;
-// std::unique_ptr<IRBuilder<>> Builder;
-// std::map<std::string, Value *> NamedValues;
-// std::unique_ptr<legacy::FunctionPassManager> TheFPM;
-// std::unique_ptr<KaleidoscopeJIT> TheJIT;
-// std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
+class Interpreter;
 
 struct StatementAST {
   typedef std::unique_ptr<StatementAST> Ptr;
   virtual ~StatementAST() {};
-  virtual void codegen() = 0;
+  virtual void codegen(Interpreter*) = 0;
 };
 
 struct ScopeAST {
+  typedef std::unique_ptr<ScopeAST> Ptr;
+
   std::vector<StatementAST::Ptr> statements;
   ScopeAST(std::vector<StatementAST::Ptr>&& input) : statements(input.size()) { 
     for (size_t ind = 0;ind < input.size(); ++ind) {
@@ -93,16 +48,17 @@ struct ScopeAST {
     }
   } 
 
-  void codegen(); 
+  void codegen(Interpreter*); 
 
-  typedef std::unique_ptr<ScopeAST> Ptr;
+  std::unique_ptr<llvm::IRBuilder<>> the_builder;
+  std::map<std::string, llvm::Value*> named_values;
 };
 
 struct ExpressionAST {
   typedef std::unique_ptr<ExpressionAST> Ptr; 
   
   virtual ~ExpressionAST() {};
-  virtual llvm::Value* codegen() = 0;
+  virtual llvm::Value* codegen(Interpreter*) = 0;
 };
 
 // Statement Expression not lisp's "s-expression"
@@ -112,7 +68,7 @@ struct SExpressionAST : StatementAST {
   SExpressionAST(ExpressionAST::Ptr&& _expr) 
     : expr(std::forward<ExpressionAST::Ptr>(_expr)) { }
 
-  void codegen() override;
+  void codegen(Interpreter*) override;
 };
 
 struct VariableDeclarationAST : StatementAST {
@@ -125,7 +81,7 @@ struct VariableDeclarationAST : StatementAST {
     opt_expression.reset(_expr.release());
   }
 
-  void codegen() override; 
+  void codegen(Interpreter*) override; 
 };
 
 struct LiteralAST : ExpressionAST {
@@ -133,7 +89,7 @@ struct LiteralAST : ExpressionAST {
   Token value;
   LiteralAST(const Token& t) : value(t) { }
 
-  llvm::Value* codegen() override; 
+  llvm::Value* codegen(Interpreter*) override; 
 };
 
 struct VariableAST : ExpressionAST {
@@ -141,7 +97,7 @@ struct VariableAST : ExpressionAST {
   Token id;
   VariableAST(const Token& t) : id(t) { }
 
-  llvm::Value* codegen() override; 
+  llvm::Value* codegen(Interpreter*) override; 
 };
 
 struct BinaryOperationAST : ExpressionAST {
@@ -154,7 +110,7 @@ struct BinaryOperationAST : ExpressionAST {
     rhs.reset(_rhs.release());
   }
 
-  llvm::Value* codegen() override; 
+  llvm::Value* codegen(Interpreter*) override; 
 };
 
 struct UnaryOperationAST : ExpressionAST {
@@ -165,7 +121,7 @@ struct UnaryOperationAST : ExpressionAST {
     rhs.reset(_rhs.release());
   }
 
-  llvm::Value* codegen() override; 
+  llvm::Value* codegen(Interpreter*) override; 
 };
 
 struct GroupingAST : ExpressionAST {
@@ -176,7 +132,7 @@ struct GroupingAST : ExpressionAST {
     expr.reset(_expr.release());
   }
 
-  llvm::Value* codegen() override; 
+  llvm::Value* codegen(Interpreter*) override; 
 };
 
 struct FunctionCallAST : ExpressionAST {
@@ -190,7 +146,7 @@ struct FunctionCallAST : ExpressionAST {
     }
   }
 
-  llvm::Value* codegen() override; 
+  llvm::Value* codegen(Interpreter*) override; 
 };
 
 struct ReturnAST : StatementAST {
@@ -199,7 +155,7 @@ struct ReturnAST : StatementAST {
   ReturnAST(ExpressionAST::Ptr&& _expression) 
     : opt_expression(std::forward<ExpressionAST::Ptr>(_expression)) { }
 
-  void codegen() override;
+  void codegen(Interpreter*) override;
 };
 
 struct FunctionPrototypeAST {
@@ -216,7 +172,7 @@ struct FunctionPrototypeAST {
     }
   }
 
-  llvm::Function* codegen(); 
+  llvm::Function* codegen(Interpreter*); 
 };
 
 struct FunctionDeclarationAST {
@@ -229,7 +185,7 @@ struct FunctionDeclarationAST {
     body.reset(_body.release());
   }
 
-  llvm::Function* codegen(); 
+  llvm::Function* codegen(Interpreter*); 
 };
 
 struct ModuleAST {
@@ -243,6 +199,110 @@ struct ModuleAST {
     }
   }
 
-  llvm::Module* codegen(); 
+  std::unique_ptr<llvm::Module>&& codegen(Interpreter*); 
+
+  std::unique_ptr<llvm::Module> the_module;
 };
 
+class interpreter_exception : std::exception {
+  std::string info;
+public:
+  interpreter_exception(const Token& tok, const std::string& in)
+  : info(fmt::format("('{}', line {}, col {}) : {}", tok.lexeme, tok.line, tok.col, in)) { }
+  virtual const char* what() {
+    return info.c_str();
+  }
+};
+
+class Interpreter {
+public:
+  std::unique_ptr<llvm::LLVMContext> the_context;
+
+  // TODO: add global scope
+  std::stack<ScopeAST*> scope_stack;
+
+  std::map<std::string, llvm::Type*> type_lookup;
+  
+  // TODO: add FunctionPassManager
+  // std::unique_ptr<llvm::FunctionPassManager> TheFPM;
+
+  ModuleAST::Ptr current_module;
+
+  llvm::Function* get_function(Token identifier) {
+    auto result = get_module() -> getFunction(identifier.lexeme);
+    if (result)
+      return result;
+    throw interpreter_exception(identifier, "function not found");
+  }
+
+  llvm::Module* get_module() {
+    return current_module -> the_module.get();
+  }
+
+  std::unique_ptr<llvm::IRBuilder<>> the_builder;
+  llvm::IRBuilder<>* get_builder() {
+    try {
+      return scope_stack.top() -> the_builder.get();
+    } catch (std::exception& e) {
+      if (!the_builder)
+        the_builder = std::make_unique<llvm::IRBuilder<>>(*the_context);
+      return the_builder.get();
+    }
+  }
+
+  llvm::Value* get_named_value(Token identifier) {
+    try {
+      if (scope_stack.empty()) {
+        throw interpreter_exception(identifier, "global scope is currently not implemented");
+        return nullptr;
+      }
+      return scope_stack.top() -> named_values.at(identifier.lexeme);
+    } catch (std::out_of_range& e) {
+      throw interpreter_exception(identifier, "named value not found");
+      return nullptr;
+    }
+  }
+
+  void set_named_value(Token identifier, llvm::Value* val) {
+    if (scope_stack.empty()) {
+      throw interpreter_exception(identifier, "global scope is currently not implemented");
+      return;
+    }
+
+    scope_stack.top() -> named_values[identifier.lexeme] = val;
+  }
+
+  void add_scope(ScopeAST* scope) {
+    if (!scope_stack.empty())
+      scope -> named_values = scope_stack.top() -> named_values;
+
+    scope_stack.push(scope);
+  }
+
+  void pop_scope() {
+    if (scope_stack.empty()) {
+      throw std::runtime_error("cannot pop empty scope stack"); 
+    } else {
+      scope_stack.pop();
+    }
+  }
+
+  llvm::Type* get_type(Token type) {
+    try {
+      return type_lookup.at(type.lexeme);
+    } catch (std::out_of_range& e) {
+      throw interpreter_exception(type, "no such type found");
+    }
+  }
+
+  Interpreter(ModuleAST::Ptr&& _module) 
+    : current_module(std::forward<ModuleAST::Ptr>(_module)) {
+    the_context = std::make_unique<llvm::LLVMContext>();
+    type_lookup["i32"] = llvm::Type::getInt32Ty(*the_context);
+    // TODO: add more types
+  }
+
+  std::unique_ptr<llvm::Module>&& run() {
+    return current_module -> codegen(this);
+  }
+};

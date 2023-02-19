@@ -1,51 +1,53 @@
 #include "AST.hpp"
 
-void ScopeAST::codegen() {
-}
-
-void VariableDeclarationAST::codegen() {
+void ScopeAST::codegen(Interpreter* interp) {
 
 }
 
-void SExpressionAST::codegen() {
-  expr -> codegen();
+void VariableDeclarationAST::codegen(Interpreter* interp) {
+
 }
 
-llvm::Value* LiteralAST::codegen() {
+void SExpressionAST::codegen(Interpreter* interp) {
+  expr -> codegen(interp);
+}
+
+llvm::Value* LiteralAST::codegen(Interpreter* interp) {
   return nullptr;
 }
 
-llvm::Value* VariableAST::codegen() {
+llvm::Value* VariableAST::codegen(Interpreter* interp) {
   return nullptr;
 }
 
-llvm::Value* BinaryOperationAST::codegen() {
+llvm::Value* BinaryOperationAST::codegen(Interpreter* interp) {
   return nullptr;
 }
 
-llvm::Value* UnaryOperationAST::codegen() {
+llvm::Value* UnaryOperationAST::codegen(Interpreter* interp) {
   return nullptr;
 }
 
-llvm::Value* GroupingAST::codegen() {
-  return expr -> codegen();
+llvm::Value* GroupingAST::codegen(Interpreter* interp) {
+  return expr -> codegen(interp);
 }
 
-llvm::Value* FunctionCallAST::codegen() {
+llvm::Value* FunctionCallAST::codegen(Interpreter* interp) {
   return nullptr;
 }
 
-llvm::Function* FunctionPrototypeAST::codegen() {
+llvm::Function* FunctionPrototypeAST::codegen(Interpreter* interp) {
   return nullptr;
 }
 
-llvm::Function* FunctionDeclarationAST::codegen() {
+llvm::Function* FunctionDeclarationAST::codegen(Interpreter* interp) {
   return nullptr;
 }
 
-llvm::Module* ModuleAST::codegen() {
+std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
   return nullptr;
 }
 
-void ReturnAST::codegen() {
+void ReturnAST::codegen(Interpreter* interp) {
+
 }

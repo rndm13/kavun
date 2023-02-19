@@ -1,0 +1,41 @@
+Scope = '{' Statement* '}' 
+
+Statement = (VariableDeclaration | Expression | Return) ';' 
+
+Return = 'return' Expression
+
+a*  = a a*
+    |  
+
+VariableDeclaration = 'var' Identifier ('=' Expression)? 
+
+Expression = Literal 
+           | Variable
+           | BinaryOperation
+           | FunctionCall
+           | UnaryOperation
+           | Grouping
+
+FunctionPrototype   = 'fn' Identifier '(' VariableDeclaration* ')'
+
+FunctionDeclaration = FunctionPrototype Scope
+
+Literal = Number 
+        | String 
+        | Bool 
+        | Null
+
+BinaryOperation = Expression BinaryOperator Expression 
+
+BinaryOperator  = '+' | '-' | '/'  | '*'  | '='  | 'and' | 'or'
+                | '>' | '<' | '>=' | '<=' | '=='
+
+FunctionCall = Identifier '(' Expression* ')'
+
+UnaryOperation = UnaryOperator Expression 
+UnaryOperator = '-'
+ 
+Grouping = '(' Expression ')' 
+
+Module = 'module' Name ';'
+         FunctionDeclaration*
