@@ -20,6 +20,9 @@ llvm::BasicBlock* ScopeAST::codegen(Interpreter* interp) {
 }
 
 void VariableDeclarationAST::codegen(Interpreter* interp) {
+  if (opt_expression)
+    interp -> set_named_value(id, opt_expression -> codegen(interp));
+  else interp -> set_named_value(id, nullptr);
 }
 
 void SExpressionAST::codegen(Interpreter* interp) {

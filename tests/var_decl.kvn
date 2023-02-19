@@ -2,6 +2,5 @@ module test;
 
 fn main() i32 {
   var i32 x = 42;
-  x = x + 2;
   return x;
 }
