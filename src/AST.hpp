@@ -18,13 +18,17 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/PassInstrumentation.h"
+#include "llvm/IR/PassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
-#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Analysis/LoopAnalysisManager.h"
+#include "llvm/Analysis/CGSCCPassManager.h"
+#include "llvm/Analysis/ModuleSummaryAnalysis.h"
+#include "llvm/Passes/PassBuilder.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
@@ -239,12 +243,7 @@ public:
 
   std::map<std::string, llvm::Type*> type_lookup;
   
-  // TODO: add FunctionPassManager
-  // std::unique_ptr<llvm::FunctionPassManager> TheFPM;
-
-  ModuleAST::Ptr current_module;
-
-  llvm::Function* get_function(Token identifier) {
+  ModuleAST::Ptr current_module; llvm::Function* get_function(Token identifier) {
     auto result = get_module() -> getFunction(identifier.lexeme);
     if (result)
       return result;
@@ -314,6 +313,35 @@ public:
     type_lookup["string"] = 
       llvm::PointerType::get(llvm::Type::getInt8Ty(*the_context), 0); 
     // TODO: add double
+  }
+
+  void optimize_module(llvm::Module* module_ptr) {
+    // Create the analysis managers.
+    llvm::LoopAnalysisManager LAM;
+    llvm::FunctionAnalysisManager FAM;
+    llvm::CGSCCAnalysisManager CGAM;
+    llvm::ModuleAnalysisManager MAM;
+
+    // Create the new pass manager builder.
+    // Take a look at the PassBuilder constructor parameters for more
+    // customization, e.g. specifying a TargetMachine or various debugging
+    // options.
+    llvm::PassBuilder PB;
+
+    // Register all the basic analyses with the managers.
+    PB.registerModuleAnalyses(MAM);
+    PB.registerCGSCCAnalyses(CGAM);
+    PB.registerFunctionAnalyses(FAM);
+    PB.registerLoopAnalyses(LAM);
+    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+    // Create the pass manager.
+    // This one corresponds to a typical -O2 optimization pipeline.
+    llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(
+        llvm::PassBuilder::OptimizationLevel::O2);
+
+    // Optimize the IR!
+    MPM.run(*module_ptr, MAM); 
   }
 
   std::unique_ptr<llvm::Module>&& run() {

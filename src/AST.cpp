@@ -175,6 +175,7 @@ std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
   for (auto& func : functions) {
     func -> codegen(interp);
   }
+  interp -> optimize_module(the_module.get());
   return std::move(the_module);
 }
 
