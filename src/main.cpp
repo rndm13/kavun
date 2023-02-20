@@ -44,30 +44,30 @@ void file_read(std::string file) {
   try {
     Lexer lexer{};
     auto tokens = lexer.get_tokens(input);
-    fmt::print("[LEXER PASS]\n");
+    fmt::print(stderr, "[LEXER PASS]\n");
 
     Parser parser{};
     auto ast = parser.parse(tokens);
-    fmt::print("[PARSER PASS]\n");
+    fmt::print(stderr, "[PARSER PASS]\n");
 
     Interpreter interp(std::forward<ModuleAST::Ptr>(ast));
     auto result = interp.run();
-    fmt::print("[INTERPRETER PASS]\n");
-    llvm::errs() << *result << '\n';
+    fmt::print(stderr, "[INTERPRETER PASS]\n");
+    llvm::outs() << *result << '\n';
   } catch (lexer_exception& e) {
-    fmt::print("[LEXER ERROR]  {}\n", e.what());
+    fmt::print(stderr, "[LEXER ERROR]  {}\n", e.what());
     exit(LEXER_ERROR);
 
   } catch (parser_exception& e) {
-    fmt::print("[PARSER ERROR]  {}\n", e.what());
+    fmt::print(stderr, "[PARSER ERROR]  {}\n", e.what());
     exit(PARSER_ERROR);
 
   } catch (interpreter_exception& e) {
-    fmt::print("[INTERPRETER ERROR]  {}\n", e.what());
+    fmt::print(stderr, "[INTERPRETER ERROR]  {}\n", e.what());
     exit(INTERPRETER_ERROR);
 
   } catch (std::exception& e) {
-    fmt::print("[UNEXPECTED ERROR]  {}\n", e.what());
+    fmt::print(stderr, "[UNEXPECTED ERROR]  {}\n", e.what());
     exit(UNEXPECTED_ERROR);
 
   }
