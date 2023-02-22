@@ -8,6 +8,8 @@
 #include <vector>
 #include <ranges>
 #include <string_view>
+#include <functional>
+#include <numeric>
 
 enum TokenType {
   TOK_LEFT_PAREN,
@@ -184,6 +186,9 @@ class Lexer {
 
   [[nodiscard]]
   bool is_end() { return current_ind >= source.size(); }
+
+  [[nodiscard]]
+  std::string handle_escape_chars(const std::string&);
 
   void add_token(TokenType type, const std::string &lexeme = "",
                  const Literal &literal = Literal()) {

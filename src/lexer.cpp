@@ -97,6 +97,34 @@ void Lexer::handle_number() {
   }
 }
 
+[[nodiscard]]
+std::string Lexer::handle_escape_chars(const std::string& input) {
+  std::string output{};
+  std::for_each(input.cbegin(), input.cend(),[&output, escaped = false, this](char cur) mutable {
+      if (escaped) {
+        switch (cur) {
+          break; case 'n':
+            output += '\n';
+          break; case 't':
+            output += '\t';
+          break; case '\\':
+            output += '\\';
+          break; default:
+            throw_exception(fmt::format("unknown escape char '{}'", cur));
+            break;
+        };
+        escaped = false;
+        return;
+      }
+      if (cur == '\\') {
+         escaped = true; 
+         return;
+      }
+      output += cur;
+      });
+  return output;
+}
+
 void Lexer::handle_string() {
   move_while([quote = false](char c) mutable {
     if (c == '"') {
@@ -108,9 +136,14 @@ void Lexer::handle_string() {
 
   if (is_end() && peek() != '"' && start_ind != current_ind) 
     throw_exception("End of string not found.");
-  std::string str = get_cur_lexeme(1);
+  std::string lexeme = get_cur_lexeme(1);
   move_cursor();
-  add_token(TOK_STRING, str, str.substr(1, str.length() - 2));
+
+  std::string str = lexeme.substr(1, lexeme.length() - 2);
+
+  str = handle_escape_chars(str);
+
+  add_token(TOK_STRING, lexeme, str);
 }
 
 void Lexer::handle_identifier() {
