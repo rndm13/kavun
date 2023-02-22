@@ -105,9 +105,38 @@ StatementAST::Ptr Parser::handle_statement() {
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
     return result; 
   } catch (parser_exception& e) {
+    current_ind = old_ind;
+  }
+  try {
+    result = handle_conditional();
+    return result; 
+  } catch (parser_exception& e) {
     throw_exception("failed to parse statement");
     return nullptr;
   }
+}
+
+ConditionalAST::Ptr Parser::handle_conditional() {
+  assertion(peek().type == TOK_IF, "conditional must start with if");
+  auto id = peek(); 
+  move_cursor();
+  auto cond = handle_expr();
+  move_cursor();
+  auto if_body = handle_scope();
+  if (peek(1).type == TOK_ELSE) {
+    move_cursor(2);
+    auto else_body = handle_scope();
+    return std::make_unique<ConditionalAST>(
+        id,
+        std::forward<ExpressionAST::Ptr>(cond),
+        std::forward<ScopeAST::Ptr>(if_body),
+        std::forward<ScopeAST::Ptr>(else_body));
+  }
+  return std::make_unique<ConditionalAST>(
+      id,
+      std::forward<ExpressionAST::Ptr>(cond),
+      std::forward<ScopeAST::Ptr>(if_body),
+      nullptr);
 }
 
 ReturnAST::Ptr Parser::handle_return() {

@@ -58,7 +58,7 @@ struct ScopeAST {
     }
   } 
 
-  llvm::BasicBlock* codegen(Interpreter*); 
+  llvm::BasicBlock* codegen(Interpreter*, llvm::Function*, std::string); 
 
   std::map<std::string, llvm::Value*> named_values;
 };
@@ -214,16 +214,19 @@ struct FunctionDeclarationAST : TopLevelAST {
 };
 
 struct ConditionalAST : StatementAST {
+  Token id;
   ExpressionAST::Ptr condition;
 
   ScopeAST::Ptr if_body;
   ScopeAST::Ptr else_body;
 
   ConditionalAST(
+      const Token& _id,
       ExpressionAST::Ptr&& _cond,
       ScopeAST::Ptr&& _if,
-      ScopeAST::Ptr&& _else)
-    : condition(std::forward<ExpressionAST::Ptr>(_cond)),
+      ScopeAST::Ptr&& _else = nullptr)
+    : id(_id),
+      condition(std::forward<ExpressionAST::Ptr>(_cond)),
       if_body(std::forward<ScopeAST::Ptr>(_if)),
       else_body(std::forward<ScopeAST::Ptr>(_else))
   { }

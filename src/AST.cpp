@@ -1,10 +1,12 @@
 #include "AST.hpp"
 
-llvm::BasicBlock* ScopeAST::codegen(Interpreter* interp) {
+llvm::BasicBlock* ScopeAST::codegen(Interpreter* interp, llvm::Function* parent, std::string block_name = "scope_entry") {
   llvm::BasicBlock *block = 
     llvm::BasicBlock::Create(
         *interp -> the_context,
-        llvm::Twine("scope_entry"));
+        block_name);
+
+  block -> insertInto(parent);
 
   interp -> the_builder -> SetInsertPoint(block);
 
@@ -147,6 +149,14 @@ llvm::Value* FunctionCallAST::codegen(Interpreter* interp) {
   return interp -> the_builder -> CreateCall(func, arg_vals, "calltmp");
 }
 
+void ReturnAST::codegen(Interpreter* interp) {
+  if (opt_expression) {
+    interp -> the_builder -> CreateRet(opt_expression -> codegen(interp));
+  } else {
+    interp -> the_builder -> CreateRetVoid();
+  }
+}
+
 llvm::Function* FunctionPrototypeAST::codegen(Interpreter* interp) {
   // setting parameter types
   std::vector<llvm::Type*> parameter_types{};
@@ -187,11 +197,59 @@ llvm::Function* FunctionDeclarationAST::codegen(Interpreter* interp) {
     body -> named_values[proto -> parameters[i] -> id.lexeme] = func -> getArg(i);
   }
 
-  auto scope = body -> codegen(interp);
- 
-  scope -> insertInto(func);
+  auto scope = body -> codegen(interp, func, "function_entry");
 
   return func;
+}
+
+void ConditionalAST::codegen(Interpreter* interp) {
+  auto cond_eval = condition -> codegen(interp);
+  if (cond_eval == nullptr) {
+    throw interpreter_exception(id, "condition cannot be void");
+    return;
+  }
+
+  auto orig_block = interp -> the_builder -> GetInsertBlock();
+  auto orig_point = interp -> the_builder -> GetInsertPoint();
+
+  auto parent_fn  = orig_block -> getParent();
+
+  auto if_block = if_body -> codegen(interp, parent_fn, "then_block");
+
+  interp -> the_builder -> SetInsertPoint(orig_block, orig_point);
+
+  llvm::BasicBlock* else_block = nullptr;
+  if (else_body) {
+    else_block = else_body -> codegen(interp, parent_fn, "else_block");
+  }
+
+  interp -> the_builder -> SetInsertPoint(orig_block);
+
+  llvm::BasicBlock* after_block =
+    llvm::BasicBlock::Create(
+        *interp -> the_context,
+        "after_block");
+
+  after_block -> insertInto(parent_fn);
+  
+  interp -> the_builder -> SetInsertPoint(orig_block, orig_point);
+
+  if (else_body)
+    interp -> the_builder -> CreateCondBr(cond_eval, if_block, else_block);
+  else
+    interp -> the_builder -> CreateCondBr(cond_eval, if_block, after_block);
+
+  interp -> the_builder -> SetInsertPoint(if_block);
+
+  interp -> the_builder -> CreateBr(after_block);
+
+  if (else_body) {
+    interp -> the_builder -> SetInsertPoint(else_block);
+
+    interp -> the_builder -> CreateBr(after_block);
+  }
+
+  interp -> the_builder -> SetInsertPoint(after_block);
 }
 
 std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
@@ -199,14 +257,6 @@ std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
   for (auto& func : functions) {
     func -> codegen(interp);
   }
-  interp -> optimize_module(the_module.get());
+  // interp -> optimize_module(the_module.get());
   return std::move(the_module);
-}
-
-void ReturnAST::codegen(Interpreter* interp) {
-  if (opt_expression) {
-    interp -> the_builder -> CreateRet(opt_expression -> codegen(interp));
-  } else {
-    interp -> the_builder -> CreateRetVoid();
-  }
 }

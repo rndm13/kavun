@@ -1,0 +1,15 @@
+module factorial;
+
+fn factorial(var i32 input) i32 {
+  if input <= 1 {
+    return 1;
+  }
+  return input * factorial(input - 1);
+}
+
+extern fn printf(var string t var i32 n1) void;
+
+fn main() void {
+  printf("%d\n" factorial(10));
+  return;
+}

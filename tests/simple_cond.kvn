@@ -1,0 +1,10 @@
+module cond;
+
+extern fn printf(var string text) void;
+
+fn main() void {
+  if 2 == 2 {
+    printf("hi");
+  }
+  return;
+}

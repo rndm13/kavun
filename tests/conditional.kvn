@@ -1,0 +1,17 @@
+module conditional;
+
+extern fn printf(var string text) void;
+
+fn main() void {
+  printf("Start\n");
+  if 2 == 2 {
+    printf("2 == 2\n");
+  }
+  if 3 == 4 {
+    printf("3 == 4\n");
+  } else {
+    printf("3 != 4\n");
+  }
+  printf("Finished\n");
+  return;
+}

@@ -92,6 +92,7 @@ class Parser {
   ReturnAST::Ptr handle_return(); 
   VariableDeclarationAST::Ptr handle_vd();
   ModuleAST::Ptr handle_module();
+  ConditionalAST::Ptr handle_conditional();
 
   ExpressionAST::Ptr handle_expr();
   
