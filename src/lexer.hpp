@@ -23,7 +23,6 @@ enum TokenType {
   TOK_SLASH,
   TOK_STAR,
   TOK_SEMICOLON,
-  TOK_COMMA,
   TOK_DOT,
   TOK_BANG,
   TOK_BANG_EQUAL,
