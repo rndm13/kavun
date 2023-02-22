@@ -1,0 +1,5 @@
+module no_func;
+
+fn main() void {
+  return missing_function();
+}

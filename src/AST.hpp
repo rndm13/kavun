@@ -31,6 +31,8 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "lexer.hpp"
 
@@ -248,6 +250,7 @@ public:
     if (result)
       return result;
     throw interpreter_exception(identifier, "function not found");
+    return nullptr;
   }
 
   llvm::Module* get_module() {
@@ -307,7 +310,7 @@ public:
     : current_module(std::forward<ModuleAST::Ptr>(_module)) {
     the_context = std::make_unique<llvm::LLVMContext>();
     the_builder = std::make_unique<llvm::IRBuilder<>>(*the_context);
-    type_lookup["i32"] = llvm::Type::getInt32Ty(*the_context);
+    type_lookup["i32"]  = llvm::Type::getInt32Ty(*the_context);
     type_lookup["void"] = llvm::Type::getVoidTy(*the_context);
     // TODO: change string to a class
     type_lookup["string"] = 
@@ -343,6 +346,56 @@ public:
     // Optimize the IR!
     MPM.run(*module_ptr, MAM); 
   }
+
+//   void print_mc(llvm::Module* module_ptr, std::string file_name = "output.o") {
+//     auto target_triple = llvm::sys::getDefaultTargetTriple();
+//     llvm::InitializeAllTargetInfos();
+//     llvm::InitializeAllTargets();
+//     llvm::InitializeAllTargetMCs();
+//     llvm::InitializeAllAsmParsers();
+//     llvm::InitializeAllAsmPrinters();
+// 
+//     std::string error = "failed to find requested target";
+//     auto target = llvm::TargetRegistry::lookupTarget(
+//         target_triple,
+//         error);
+// 
+//     if (!target) {
+//       throw std::runtime_error(error);
+//       return;
+//     }
+// 
+//     auto CPU = "generic";
+//     auto Features = "";
+// 
+//     llvm::TargetOptions opt;
+//     auto RM = std::optional<llvm::Reloc::Model>();
+// 
+//     auto TargetMachine = 
+//       llvm::Target->createTargetMachine(target_triple, CPU, Features, opt, RM);
+// 
+//     module_ptr -> setDataLayout(TargetMachine->createDataLayout());
+//     module_ptr -> setTargetTriple(target_triple);
+// 
+//     std::error_code EC;
+//     llvm::raw_fd_ostream dest(file_name, EC, llvm::sys::fs::OF_None);
+// 
+//     if (EC) {
+//       throw std::runtime_error(fmt::format("could not open file '{}'", file_name));
+//       return;
+//     }
+// 
+//     legacy::PassManager pass; // TODO: change this to smth else
+//     auto FileType = llvm::CGFT_ObjectFile;
+// 
+//     if (TargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
+//       throw std::runtime_error("TargetMachine can't emit a file of this type");
+//       return;
+//     }
+// 
+//     pass.run(*module_ptr);
+//     dest.flush();
+//   }
 
   std::unique_ptr<llvm::Module>&& run() {
     return current_module -> codegen(this);

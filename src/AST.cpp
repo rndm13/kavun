@@ -4,7 +4,7 @@ llvm::BasicBlock* ScopeAST::codegen(Interpreter* interp) {
   llvm::BasicBlock *block = 
     llvm::BasicBlock::Create(
         *interp -> the_context,
-        "scope_entry");
+        llvm::Twine("scope_entry"));
 
   interp -> the_builder -> SetInsertPoint(block);
 
@@ -112,6 +112,10 @@ llvm::Value* GroupingAST::codegen(Interpreter* interp) {
 llvm::Value* FunctionCallAST::codegen(Interpreter* interp) {
 
   llvm::Function* func = interp -> get_function(id);
+  if (!func) {
+    return nullptr;
+  }
+
   
   std::vector<llvm::Value*> arg_vals;
 
@@ -120,6 +124,8 @@ llvm::Value* FunctionCallAST::codegen(Interpreter* interp) {
     arg_vals.push_back(arg -> codegen(interp));
   }
 
+  if (func -> getReturnType() -> isVoidTy())
+    return interp -> the_builder -> CreateCall(func, arg_vals);
   return interp -> the_builder -> CreateCall(func, arg_vals, "calltmp");
 }
 

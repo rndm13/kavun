@@ -1,0 +1,11 @@
+module func;
+
+fn some_func() void {
+  var i32 x = 0;
+  return x;
+}
+
+fn main() void {
+  var i32 x = 0;
+  return some_func;
+}

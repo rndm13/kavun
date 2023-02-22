@@ -39,7 +39,7 @@ std::string slurp(std::string file) {
   return ss.str();
 }
 
-void file_read(std::string file) {
+Return_values file_read(std::string file) {
   std::string input = slurp(file);
   try {
     Lexer lexer{};
@@ -53,29 +53,30 @@ void file_read(std::string file) {
     Interpreter interp(std::forward<ModuleAST::Ptr>(ast));
     auto result = interp.run();
     fmt::print(stderr, "[INTERPRETER PASS]\n");
+
     llvm::outs() << *result << '\n';
+    
+    return SUCCESS;
   } catch (lexer_exception& e) {
     fmt::print(stderr, "[LEXER ERROR]  {}\n", e.what());
-    exit(LEXER_ERROR);
+    return LEXER_ERROR;
 
   } catch (parser_exception& e) {
     fmt::print(stderr, "[PARSER ERROR]  {}\n", e.what());
-    exit(PARSER_ERROR);
+    return PARSER_ERROR;
 
   } catch (interpreter_exception& e) {
     fmt::print(stderr, "[INTERPRETER ERROR]  {}\n", e.what());
-    exit(INTERPRETER_ERROR);
-
+    return INTERPRETER_ERROR;
   } catch (std::exception& e) {
     fmt::print(stderr, "[UNEXPECTED ERROR]  {}\n", e.what());
-    exit(UNEXPECTED_ERROR);
-
+    return UNEXPECTED_ERROR;
   }
 }
 
 int main(int argc, char* argv[]) {
   if (argc > 1) {
-    file_read(argv[1]);
+    return file_read(argv[1]);
   } else {
     // repl or usage
   }
