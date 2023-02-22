@@ -53,6 +53,10 @@ llvm::Value* VariableAST::codegen(Interpreter* interp) {
 llvm::Value* BinaryOperationAST::codegen(Interpreter* interp) {
   llvm::Value* lhs_eval = lhs -> codegen(interp);
   llvm::Value* rhs_eval = rhs -> codegen(interp);
+  if (!lhs_eval || !rhs_eval) {
+    throw interpreter_exception(op, "void cannot be an operand");
+    return nullptr;
+  }
 
   auto* builder = interp -> the_builder.get();
   
@@ -90,6 +94,11 @@ llvm::Value* BinaryOperationAST::codegen(Interpreter* interp) {
 llvm::Value* UnaryOperationAST::codegen(Interpreter* interp) {
   llvm::Value* rhs_eval = rhs -> codegen(interp);
   
+  if (!rhs_eval) {
+    throw interpreter_exception(op, "void cannot be an operand");
+    return nullptr;
+  }
+
   // TODO: add for different types
   // e.g. CreateFNeg for float
   switch (op.type) {
@@ -121,11 +130,20 @@ llvm::Value* FunctionCallAST::codegen(Interpreter* interp) {
 
   arg_vals.reserve(args.size());
   for (auto& arg : args) {
-    arg_vals.push_back(arg -> codegen(interp));
+    auto arg_eval = arg -> codegen(interp);
+
+    if (!arg_eval) {
+      throw interpreter_exception(id, "void cannot be an argument");
+      return nullptr;
+    }
+
+    arg_vals.push_back(arg_eval);
   }
 
-  if (func -> getReturnType() -> isVoidTy())
-    return interp -> the_builder -> CreateCall(func, arg_vals);
+  if (func -> getReturnType() -> isVoidTy()) {
+    interp -> the_builder -> CreateCall(func, arg_vals);
+    return nullptr;
+  }
   return interp -> the_builder -> CreateCall(func, arg_vals, "calltmp");
 }
 

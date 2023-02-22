@@ -1,0 +1,9 @@
+module void;
+
+fn void_ret() void {
+  return;
+}
+
+fn main() i32 {
+  return void_ret() + 5;
+}
