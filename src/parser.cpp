@@ -1,6 +1,7 @@
 #include "parser.hpp"
 
 ModuleAST::Ptr Parser::handle_module() {
+  set_excstack_breakpoint();
   assertion(peek().type == TOK_MODULE, "module must start with module declaration");
   move_cursor();
   assertion(peek().type == TOK_IDENTIFIER, "module must have a name");
@@ -9,32 +10,36 @@ ModuleAST::Ptr Parser::handle_module() {
   assertion(peek().type == TOK_SEMICOLON, "missing ';'");
   move_cursor();
 
-  auto result = take_with(&Parser::handle_top_level);
+  auto result = take_with(&Parser::handle_top_level, false);
 
   move_cursor();
   if (current_ind + 1 < tokens.size()) {
     throw_exception(fmt::format("failed to parse entire file. exception stack:\n{}", fmt::join(exception_stack, "\n")));
+    return nullptr;
   }
+  break_excstack();
   return std::make_unique<ModuleAST>(name, std::move(result));
 }
 
 TopLevelAST::Ptr Parser::handle_top_level() {
+  set_excstack_breakpoint();
   TopLevelAST::Ptr result;
   size_t old_ind = current_ind;
   try {
     result = handle_fn_decl();
+    break_excstack();
     return result; 
   } catch (parser_exception& e) {
     current_ind = old_ind;
   }
   try {
     result = handle_extern_fn();
+    break_excstack();
     return result; 
   } catch (parser_exception& e) {
     throw_exception("failed to parse top level");
     return nullptr;
   }
-
 }
 
 FunctionPrototypeAST::Ptr Parser::handle_fn_proto() {
@@ -73,19 +78,21 @@ ScopeAST::Ptr Parser::handle_scope() {
   assertion(peek().type == TOK_LEFT_CURLY, "scope must start with a left curly brace");
   move_cursor();
   
-  auto statements = take_with(&Parser::handle_statement);
+  auto statements = take_with(&Parser::handle_statement, false);
 
   assertion(peek().type == TOK_RIGHT_CURLY, "scope must end with a right curly brace");
   return std::make_unique<ScopeAST>(std::move(statements));
 }
 
 StatementAST::Ptr Parser::handle_statement() {
+  set_excstack_breakpoint();
   StatementAST::Ptr result;
   size_t old_ind = current_ind;
   try {
     result = handle_vd();
     move_cursor();
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+    break_excstack();
     return result; 
   } catch (parser_exception& e) {
     current_ind = old_ind;
@@ -95,6 +102,7 @@ StatementAST::Ptr Parser::handle_statement() {
     result = std::make_unique<SExpressionAST>(std::move(expr));
     move_cursor();
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+    break_excstack();
     return result; 
   } catch (parser_exception& e) {
     current_ind = old_ind;
@@ -103,12 +111,14 @@ StatementAST::Ptr Parser::handle_statement() {
     result = handle_return();
     move_cursor();
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+    break_excstack();
     return result; 
   } catch (parser_exception& e) {
     current_ind = old_ind;
   }
   try {
     result = handle_conditional();
+    break_excstack();
     return result; 
   } catch (parser_exception& e) {
     throw_exception("failed to parse statement");
@@ -171,32 +181,27 @@ ExpressionAST::Ptr Parser::handle_expr() {
   ExpressionAST::Ptr result = nullptr;
   if (cur.type == TOK_IDENTIFIER) { 
     if (peek(1).type == TOK_LEFT_PAREN) { // Function call
-      Dprint("Function call\n");
       move_cursor(2);
       auto args = take_with(&Parser::handle_expr);
       assertion(peek().type == TOK_RIGHT_PAREN, "missing parentheses for function call");
       result = std::make_unique<FunctionCallAST>(cur, std::move(args));
     }
     else {
-      Dprint("Variable\n");
       result = std::make_unique<VariableAST>(cur);
     }
   }
 
   if (cur.is_literal()) {
-    Dprint("Literal\n");
     result = std::make_unique<LiteralAST>(cur);
   }
 
   if (cur.is_unary_op()) {
-    Dprint("Unary\n");
     move_cursor();
     auto rhs = handle_expr();
     result = std::make_unique<UnaryOperationAST>(cur, std::move(rhs));
   }
 
   if (cur.type == TOK_LEFT_PAREN) {
-    Dprint("Grouping\n");
     move_cursor();
     auto expr = handle_expr();
     move_cursor();
@@ -211,7 +216,6 @@ ExpressionAST::Ptr Parser::handle_expr() {
   auto next = peek(1);
 
   if (result && next.is_binary_op()) {
-    Dprint("Binary {} \n", next.lexeme);
     move_cursor(2);
     auto rhs = handle_expr();
     result = std::make_unique<BinaryOperationAST>(std::move(result), next, std::move(rhs));

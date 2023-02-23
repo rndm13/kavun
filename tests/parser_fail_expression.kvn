@@ -1,0 +1,5 @@
+module expr_fail;
+
+fn main() i32 {
+  return -2 + 3 %;
+}
