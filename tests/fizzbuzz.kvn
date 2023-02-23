@@ -2,9 +2,7 @@ module fizzbuzz;
 
 extern fn printf(var string text var i32 num) void;
 
-fn main() void {
-  var i32 num = 5;
-
+fn fizzbuzz(var i32 num) void {
   if (num % 3) == 0 {
     printf("Fizz" 0);
   }
@@ -18,5 +16,19 @@ fn main() void {
   }
 
   printf("\n" 0);
+  return;
+}
+
+fn loop(var i32 cur var i32 max) void {
+  if cur >= max {
+    return;
+  }
+  fizzbuzz(cur);
+  loop(cur + 1 max);
+  return;
+}
+
+fn main() void {
+  loop(1 100);
   return;
 }
