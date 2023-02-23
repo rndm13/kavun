@@ -28,6 +28,7 @@ void Lexer::scan_token() {
   break; case '+': add_token(TOK_PLUS, get_cur_lexeme(1));
   break; case ';': add_token(TOK_SEMICOLON, get_cur_lexeme(1));
   break; case '*': add_token(TOK_STAR, get_cur_lexeme(1));
+  break; case '%': add_token(TOK_MODULO, get_cur_lexeme(1));
   break; case '/':
     if (peek_next() == '/') {
       move_while ([](char ch){return ch != '\n';});

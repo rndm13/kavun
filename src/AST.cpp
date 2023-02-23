@@ -63,6 +63,8 @@ llvm::Value* BinaryOperationAST::codegen(Interpreter* interp) {
   auto* builder = interp -> the_builder.get();
   
   switch (op.type) {
+    break; case TOK_MODULO:
+      return builder -> CreateSRem(lhs_eval, rhs_eval, "remtmp");
     break; case TOK_PLUS:
       return builder -> CreateAdd(lhs_eval, rhs_eval, "addtmp");
     break; case TOK_MINUS:

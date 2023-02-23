@@ -1,0 +1,10 @@
+module input;
+
+extern fn get_i32() i32;
+extern fn printf(var string text var i32 num) void;
+
+fn main() void {
+  var i32 num = get_i32();
+  printf("You wrote = %d" num);
+  return;
+}

@@ -22,6 +22,7 @@ enum TokenType {
   TOK_PLUS,
   TOK_SLASH,
   TOK_STAR,
+  TOK_MODULO,
   TOK_SEMICOLON,
   TOK_DOT,
   TOK_BANG,
@@ -51,7 +52,7 @@ enum TokenType {
   TOK_MODULE,
   TOK_EXTERN,
   TOK_EOF,
-  TOK_FAIL
+  TOK_FAIL,
 };
 
 // Possible types of data:
@@ -79,7 +80,7 @@ public:
   }
   bool is_binary_op() {
     return type == TOK_PLUS || type == TOK_MINUS   || type == TOK_STAR       || type == TOK_SLASH || type == TOK_EQUAL || type == TOK_AND || type == TOK_OR
-        || type == TOK_LESS || type == TOK_GREATER || type == TOK_LESS_EQUAL || type == TOK_GREATER_EQUAL || type == TOK_EQUAL_EQUAL;
+        || type == TOK_LESS || type == TOK_GREATER || type == TOK_LESS_EQUAL || type == TOK_GREATER_EQUAL || type == TOK_EQUAL_EQUAL || type == TOK_BANG_EQUAL || type == TOK_MODULO;
   }
   bool is_unary_op() {
     return type == TOK_MINUS;
