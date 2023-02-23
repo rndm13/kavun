@@ -266,3 +266,33 @@ std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
   // interp -> optimize_module(the_module.get());
   return std::move(the_module);
 }
+
+
+void Interpreter::optimize_module(llvm::Module* module_ptr) {
+  // Create the analysis managers.
+  llvm::LoopAnalysisManager LAM;
+  llvm::FunctionAnalysisManager FAM;
+  llvm::CGSCCAnalysisManager CGAM;
+  llvm::ModuleAnalysisManager MAM;
+
+  // Create the new pass manager builder.
+  // Take a look at the PassBuilder constructor parameters for more
+  // customization, e.g. specifying a TargetMachine or various debugging
+  // options.
+  llvm::PassBuilder PB;
+
+  // Register all the basic analyses with the managers.
+  PB.registerModuleAnalyses(MAM);
+  PB.registerCGSCCAnalyses(CGAM);
+  PB.registerFunctionAnalyses(FAM);
+  PB.registerLoopAnalyses(LAM);
+  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+  // Create the pass manager.
+  // This one corresponds to a typical -O2 optimization pipeline.
+  llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(
+      llvm::PassBuilder::OptimizationLevel::O2);
+
+  // Optimize the IR!
+  MPM.run(*module_ptr, MAM); 
+}
