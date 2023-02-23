@@ -56,6 +56,25 @@ llvm::Value* VariableAST::codegen(Interpreter* interp) {
   return interp -> get_named_value(id);
 }
 
+std::size_t BinaryOperationAST::get_precedence() {
+  switch (op.type) {
+    case TOK_STAR: return 5;
+    case TOK_MODULO: return 5;
+    case TOK_SLASH: return 5;
+    case TOK_PLUS: return 6;
+    case TOK_MINUS: return 6;
+    case TOK_LESS_EQUAL: return 9;
+    case TOK_LESS: return 9;
+    case TOK_GREATER: return 9;
+    case TOK_GREATER_EQUAL: return 9;
+    case TOK_BANG_EQUAL: return 10;
+    case TOK_EQUAL_EQUAL: return 10;
+    case TOK_AND: return 14;
+    case TOK_OR: return 15;
+    default: return 999;
+  }
+}
+
 llvm::Value* BinaryOperationAST::codegen(Interpreter* interp) {
   llvm::Value* lhs_eval = lhs -> codegen(interp);
   llvm::Value* rhs_eval = rhs -> codegen(interp);

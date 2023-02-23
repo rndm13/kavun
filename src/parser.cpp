@@ -248,8 +248,46 @@ void Parser::balance_unary(ExpressionAST::Ptr& expr) {
       bin_rhs -> op,
       std::move(bin_rhs -> rhs));
   } catch (std::bad_cast& e) {
-    // TODO:
+    balance_binary_precedence(expr);
   }
+}
+
+void Parser::balance_binary_precedence(ExpressionAST::Ptr& expr) {
+  if (!expr) return;
+
+  // 2 * 3 + 4 * 5
+  // 2 * (3 + (4 * 5))
+  // (2 * 3) + (4 * 5)
+  
+  // if expression is binary and rhs is binary then
+  // if this precedence is lower than rhs precedence then
+  // expression = 
+  // rhs = Binary(
+  //  Binary(
+  //    this -> lhs,
+  //    this -> op,
+  //    rhs -> lhs), 
+  //  rhs -> op,
+  //  rhs -> rhs))
+  // 
+
+  try {
+    BinaryOperationAST* this_expr = CAST(expr, BinaryOperationAST);
+    BinaryOperationAST* rhs_expr = CAST(this_expr -> rhs, BinaryOperationAST);
+    balance_expr(this_expr -> lhs);
+    balance_expr(this_expr -> rhs);
+    balance_expr(rhs_expr -> rhs);
+
+    if (this_expr -> get_precedence() < rhs_expr -> get_precedence()) {
+      expr = std::make_unique<BinaryOperationAST>(
+        std::make_unique<BinaryOperationAST>(
+          std::move(this_expr -> lhs),
+          this_expr -> op,
+          std::move(rhs_expr -> lhs)),
+        rhs_expr -> op,
+        std::move(rhs_expr -> rhs));
+    }
+  } catch (std::bad_cast& e) { }
 }
 
 #undef CAST

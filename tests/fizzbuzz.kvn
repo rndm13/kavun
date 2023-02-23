@@ -3,15 +3,15 @@ module fizzbuzz;
 extern fn printf(var string text var i32 num) void;
 
 fn fizzbuzz(var i32 num) void {
-  if (num % 3) == 0 {
+  if num % 3 == 0 {
     printf("Fizz" 0);
   }
 
-  if (num % 5) == 0 {
+  if num % 5 == 0 {
     printf("Buzz" 0);
   } 
 
-  if ((num % 3) != 0) and ((num % 5) != 0) {
+  if (num % 3 != 0) and (num % 5 != 0) {
     printf("%d" num);
   }
 

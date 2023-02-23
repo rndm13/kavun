@@ -119,6 +119,8 @@ struct BinaryOperationAST : ExpressionAST {
     rhs.reset(_rhs.release());
   }
 
+  std::size_t get_precedence();
+
   llvm::Value* codegen(Interpreter*) override; 
 };
 
