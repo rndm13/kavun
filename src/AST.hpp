@@ -337,6 +337,7 @@ public:
     the_context = std::make_unique<llvm::LLVMContext>();
     the_builder = std::make_unique<llvm::IRBuilder<>>(*the_context);
     type_lookup["i32"]  = llvm::Type::getInt32Ty(*the_context);
+    type_lookup["bool"]  = llvm::Type::getInt1Ty(*the_context);
     type_lookup["void"] = llvm::Type::getVoidTy(*the_context);
     // TODO: change string to a class
     type_lookup["string"] = 
@@ -427,3 +428,4 @@ public:
     return current_module -> codegen(this);
   }
 };
+

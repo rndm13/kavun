@@ -83,7 +83,7 @@ public:
         || type == TOK_LESS || type == TOK_GREATER || type == TOK_LESS_EQUAL || type == TOK_GREATER_EQUAL || type == TOK_EQUAL_EQUAL || type == TOK_BANG_EQUAL || type == TOK_MODULO;
   }
   bool is_unary_op() {
-    return type == TOK_MINUS;
+    return type == TOK_MINUS || type == TOK_BANG;
   }
 };
 

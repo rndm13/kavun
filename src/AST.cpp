@@ -44,6 +44,10 @@ llvm::Value* LiteralAST::codegen(Interpreter* interp) {
           0,
           interp -> get_module());
   }
+  if (std::holds_alternative<bool>(value.literal)) {
+    return interp -> the_builder ->
+      getInt1(std::get<bool>(value.literal));
+  }
   throw interpreter_exception(value, "not implemented yet");
   return nullptr;
 };

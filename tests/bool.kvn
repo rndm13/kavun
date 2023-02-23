@@ -1,0 +1,15 @@
+module bool;
+
+extern fn printf(var string text) void;
+
+fn main() void {
+  var bool flag = false;
+
+  if flag {
+    printf("flag is set to true\n");
+  }
+  if !flag {
+    printf("flag is set to false\n");
+  }
+  return;
+}
