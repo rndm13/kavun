@@ -104,12 +104,18 @@ class Parser {
   AST::Module        handle_module();
   AST::StatementPtr  handle_conditional();
   AST::ExpressionPtr handle_expr();
+
+  // Expressions:
+  AST::ExpressionPtr primary();
+  AST::ExpressionPtr unary();
+  AST::ExpressionPtr factor();
+  AST::ExpressionPtr term();
+  AST::ExpressionPtr comparison();
+  AST::ExpressionPtr equality();
+  AST::ExpressionPtr conjunction();
+  AST::ExpressionPtr disjunction();
   
-  // void balance_expr(ExpressionAST::Ptr& expr) {
-  //   balance_unary(expr); 
-  // }
-  // void balance_unary(ExpressionAST::Ptr& expr);
-  // void balance_binary_precedence(ExpressionAST::Ptr& expr);
+  bool match(std::vector<TokenType>);
 
 public:
   AST::Module parse(std::vector<Token> input) {

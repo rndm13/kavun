@@ -177,128 +177,155 @@ AST::VarDecl Parser::handle_vd() {
   return AST::VarDecl(type, id, std::nullopt);
 }
 
+bool Parser::match(std::vector<TokenType> to_match) {
+  for (auto tok : to_match) {
+    if (peek(1).type == tok) {
+      move_cursor();
+      return true;
+    }
+  }
+  return false;
+}
+
 AST::ExpressionPtr Parser::handle_expr() {
-  // TODO: fix prioritization
-  auto cur = peek();
-  
-  AST::ExpressionPtr result = nullptr;
-  if (cur.type == TOK_IDENTIFIER) { 
-    if (peek(1).type == TOK_LEFT_PAREN) { // Function call
-      move_cursor(2);
+  return disjunction();
+}
+
+AST::ExpressionPtr Parser::disjunction() {
+  auto expr = conjunction();
+
+  while (match({TOK_OR})) {
+    auto op = peek();
+    move_cursor();
+    auto right = conjunction();
+    expr = AST::BinOperator::make(
+        std::forward<AST::ExpressionPtr>(expr),
+        op,
+        std::forward<AST::ExpressionPtr>(right));
+  }
+
+  return expr;
+}
+
+AST::ExpressionPtr Parser::conjunction() {
+  auto expr = equality();
+
+  while (match({TOK_AND})) {
+    auto op = peek();
+    move_cursor();
+    auto right = equality();
+    expr = AST::BinOperator::make(
+        std::forward<AST::ExpressionPtr>(expr),
+        op,
+        std::forward<AST::ExpressionPtr>(right));
+  }
+
+  return expr;
+}
+
+AST::ExpressionPtr Parser::equality() {
+  auto expr = comparison();
+
+  while (match({TOK_EQUAL_EQUAL, TOK_BANG_EQUAL})) {
+    auto op = peek();
+    move_cursor();
+    auto right = comparison();
+    expr = AST::BinOperator::make(
+        std::forward<AST::ExpressionPtr>(expr),
+        op,
+        std::forward<AST::ExpressionPtr>(right));
+  }
+
+  return expr;
+}
+
+AST::ExpressionPtr Parser::comparison() {
+  auto expr = term();
+
+  while (match({TOK_LESS, TOK_LESS_EQUAL, TOK_GREATER, TOK_GREATER_EQUAL})) {
+    auto op = peek();
+    move_cursor();
+    auto right = term();
+    expr = AST::BinOperator::make(
+        std::forward<AST::ExpressionPtr>(expr),
+        op,
+        std::forward<AST::ExpressionPtr>(right));
+  }
+
+  return expr;
+}
+
+AST::ExpressionPtr Parser::term() {
+  auto expr = factor();
+
+  while (match({TOK_PLUS, TOK_MINUS})) {
+    auto op = peek();
+    move_cursor();
+    auto right = factor();
+    expr = AST::BinOperator::make(
+        std::forward<AST::ExpressionPtr>(expr),
+        op,
+        std::forward<AST::ExpressionPtr>(right));
+  }
+
+  return expr;
+}
+
+AST::ExpressionPtr Parser::factor() {
+  auto expr = unary();
+
+  while (match({TOK_MODULO, TOK_STAR, TOK_SLASH})) {
+    auto op = peek();
+    move_cursor();
+    auto right = unary();
+    expr = AST::BinOperator::make(
+        std::forward<AST::ExpressionPtr>(expr),
+        op,
+        std::forward<AST::ExpressionPtr>(right));
+  }
+
+  return expr;
+}
+
+AST::ExpressionPtr Parser::unary() {
+  if (match({TOK_MINUS, TOK_BANG})) {
+    auto op = peek();
+    move_cursor();
+    auto right = unary();
+    return AST::UnOperator::make(
+        op,
+        std::forward<AST::ExpressionPtr>(right));
+  }
+  return primary();
+}
+
+AST::ExpressionPtr Parser::primary() {
+  auto tok = peek();
+  if (tok.type == TOK_NUMBER ||
+      tok.type == TOK_STRING || 
+      tok.type == TOK_BOOL) {
+    return AST::Literal::make(tok);
+  }
+
+  if (tok.type == TOK_IDENTIFIER) {
+    if (peek(1).type == TOK_LEFT_PAREN) {
+      move_cursor(2); // Skipping over parenthesis
       auto args = take_with(&Parser::handle_expr);
-      assertion(peek().type == TOK_RIGHT_PAREN, "missing parentheses for function call");
-      result = AST::FnCall::make(
-          cur, 
+      assertion(peek().type == TOK_RIGHT_PAREN, "missing right parenthesis");
+      return AST::FnCall::make(
+          tok,
           std::forward<std::vector<AST::ExpressionPtr>>(args));
     }
-    else {
-      result = AST::Variable::make(cur);
-    }
+    return AST::Variable::make(tok);
   }
-
-  if (cur.is_literal()) {
-    result = AST::Literal::make(cur);
-  }
-
-  if (cur.is_unary_op()) {
-    move_cursor();
-    auto rhs = handle_expr();
-    result = AST::UnOperator::make(
-        cur, 
-        std::forward<AST::ExpressionPtr>(rhs));
-  }
-
-  if (cur.type == TOK_LEFT_PAREN) {
+  if (tok.type == TOK_LEFT_PAREN) {
     move_cursor();
     auto expr = handle_expr();
     move_cursor();
-    assertion(peek().type == TOK_RIGHT_PAREN, "missing parentheses for grouping");
-    result = AST::Grouping::make(
+    assertion(peek().type == TOK_RIGHT_PAREN, "missing right parenthesis");
+    return AST::Grouping::make(
         std::forward<AST::ExpressionPtr>(expr));
   }
-
-  // -2 + 3
-  // right now: -(2 + 3)
-  // correct: (-2) + 3
-
-  auto next = peek(1);
-
-  if (result && next.is_binary_op()) {
-    move_cursor(2);
-    auto rhs = handle_expr();
-    result = AST::BinOperator::make(
-        std::forward<AST::ExpressionPtr>(result), 
-        next, 
-        std::forward<AST::ExpressionPtr>(rhs));
-  }
-
-  // balance_expr(result);
-  
-  if (!result)
-    throw_exception("failed to parse expression");
-  return result;
+  throw_exception("failed to parse expression");
+  return nullptr;
 }
-
-// #define CAST(to_cast, type) &dynamic_cast<type&>(*to_cast.get())
-// 
-// void Parser::balance_unary(ExpressionAST::Ptr& expr) {
-//   if (!expr) return;
-//   // if expression is unary and rhs is binary then
-//   // expression = 
-//   //   Binary(Unary(expression -> op, expression -> rhs -> lhs),
-//   //          expression -> rhs -> op,
-//   //          expression rhs -> rhs);
-// 
-//   try {
-//     UnaryOperationAST*  un_expr = CAST(expr, UnaryOperationAST);
-//     BinaryOperationAST* bin_rhs = CAST(un_expr -> rhs, BinaryOperationAST);
-//     balance_expr(bin_rhs -> rhs);
-//     balance_expr(un_expr -> rhs);
-//     expr = std::make_unique<BinaryOperationAST>(
-//       std::make_unique<UnaryOperationAST>(un_expr -> op, std::move(bin_rhs -> lhs)),
-//       bin_rhs -> op,
-//       std::move(bin_rhs -> rhs));
-//   } catch (std::bad_cast& e) {
-//     balance_binary_precedence(expr);
-//   }
-// }
-// 
-// void Parser::balance_binary_precedence(ExpressionAST::Ptr& expr) {
-//   if (!expr) return;
-// 
-//   // 2 * 3 + 4 * 5
-//   // 2 * (3 + (4 * 5))
-//   // (2 * 3) + (4 * 5)
-//   
-//   // if expression is binary and rhs is binary then
-//   // if this precedence is lower than rhs precedence then
-//   // expression = 
-//   // rhs = Binary(
-//   //  Binary(
-//   //    this -> lhs,
-//   //    this -> op,
-//   //    rhs -> lhs), 
-//   //  rhs -> op,
-//   //  rhs -> rhs))
-//   // 
-// 
-//   try {
-//     BinaryOperationAST* this_expr = CAST(expr, BinaryOperationAST);
-//     BinaryOperationAST* rhs_expr = CAST(this_expr -> rhs, BinaryOperationAST);
-//     balance_expr(this_expr -> lhs);
-//     balance_expr(this_expr -> rhs);
-//     balance_expr(rhs_expr -> rhs);
-// 
-//     if (this_expr -> get_precedence() < rhs_expr -> get_precedence()) {
-//       expr = std::make_unique<BinaryOperationAST>(
-//         std::make_unique<BinaryOperationAST>(
-//           std::move(this_expr -> lhs),
-//           this_expr -> op,
-//           std::move(rhs_expr -> lhs)),
-//         rhs_expr -> op,
-//         std::move(rhs_expr -> rhs));
-//     }
-//   } catch (std::bad_cast& e) { }
-// }
-// 
-// #undef CAST

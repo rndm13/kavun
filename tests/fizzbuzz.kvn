@@ -11,7 +11,7 @@ fn fizzbuzz(var i32 num) void {
     printf("Buzz" 0);
   } 
 
-  if (num % 3 != 0) and (num % 5 != 0) {
+  if num % 3 != 0 and num % 5 != 0 {
     printf("%d" num);
   }
 

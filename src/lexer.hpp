@@ -43,7 +43,6 @@ enum TokenType {
   TOK_FN,
   TOK_FOR,
   TOK_IF,
-  TOK_NULL,
   TOK_OR,
   TOK_RETURN,
   TOK_TRUE,
@@ -58,7 +57,7 @@ enum TokenType {
 // Possible types of data:
 // string, double, bool, null
 
-typedef std::variant<std::monostate, std::string, double, bool, std::uint32_t> Literal;
+typedef std::variant<std::string, double, bool, std::uint32_t> Literal;
 
 class Token {
 public:
@@ -74,17 +73,6 @@ public:
         const Literal& __literal, size_t __line, size_t __col) :
   type(__type), lexeme(__lexeme), literal(__literal),
   line(__line), col(__col) { }
-
-  bool is_literal() {
-    return type == TOK_NUMBER || type == TOK_BOOL || type == TOK_STRING || type == TOK_NULL;
-  }
-  bool is_binary_op() {
-    return type == TOK_PLUS || type == TOK_MINUS   || type == TOK_STAR       || type == TOK_SLASH || type == TOK_EQUAL || type == TOK_AND || type == TOK_OR
-        || type == TOK_LESS || type == TOK_GREATER || type == TOK_LESS_EQUAL || type == TOK_GREATER_EQUAL || type == TOK_EQUAL_EQUAL || type == TOK_BANG_EQUAL || type == TOK_MODULO;
-  }
-  bool is_unary_op() {
-    return type == TOK_MINUS || type == TOK_BANG;
-  }
 };
 
 class lexer_exception : std::exception {
@@ -105,7 +93,6 @@ class Lexer {
       {"fn", TOK_FN},
       {"for", TOK_FOR},
       {"if", TOK_IF},
-      {"null", TOK_NULL},
       {"or", TOK_OR},
       {"return", TOK_RETURN},
       {"true", TOK_TRUE},
@@ -191,7 +178,7 @@ class Lexer {
   std::string handle_escape_chars(const std::string&);
 
   void add_token(TokenType type, const std::string &lexeme = "",
-                 const Literal &literal = Literal()) {
+                 const Literal &literal = Literal{}) {
     tokens.emplace_back(type, lexeme, literal, cur_line, cur_col);
   }
   

@@ -368,6 +368,7 @@ CodeGenerator::CodeGenerator() {
   // TODO: change string to a class
   type_lookup["string"] = 
     llvm::PointerType::get(llvm::Type::getInt8Ty(*the_context), 0); 
+
   // TODO: add double
 }
 
