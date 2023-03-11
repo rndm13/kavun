@@ -146,6 +146,9 @@ void CodeGenerator::operator()(const AST::FnDecl& decl) {
   auto scope = operator()(decl.body, "function_entry", func);
 
   scope_stack.pop_scope(); // read above todo
+  if (!scope -> getTerminator()) {
+    throw interpreter_exception(decl.proto.id, "function is not terminated (not all codepaths return a value)");
+  }
 }
 
 // Statements
@@ -185,16 +188,19 @@ void CodeGenerator::operator()(const AST::Conditional& cond) {
   
   the_builder -> SetInsertPoint(orig_block, orig_point);
 
-  if (else_block)
-    the_builder -> CreateCondBr(cond_eval, if_block, else_block);
-  else
-    the_builder -> CreateCondBr(cond_eval, if_block, after_block);
-
-  the_builder -> SetInsertPoint(if_block);
-
-  the_builder -> CreateBr(after_block);
-
   if (else_block) {
+    the_builder -> CreateCondBr(cond_eval, if_block, else_block);
+  } else {
+    the_builder -> CreateCondBr(cond_eval, if_block, after_block);
+  }
+
+  if (!if_block -> getTerminator()) {
+    the_builder -> SetInsertPoint(if_block);
+
+    the_builder -> CreateBr(after_block);
+  }
+
+  if (else_block && else_block -> getTerminator()) {
     the_builder -> SetInsertPoint(else_block);
 
     the_builder -> CreateBr(after_block);
@@ -356,7 +362,10 @@ void CodeGenerator::operator()(const AST::Module& mod) {
   for (auto& func : mod.functions) {
     operator()(func);
   }
-  // optimize_module();
+//   if (llvm::verifyModule(*the_module), &llvm::outs()) {
+//     throw std::runtime_error("LLVM verification error");
+//   }
+  optimize_module();
 }
 
 CodeGenerator::CodeGenerator() {
