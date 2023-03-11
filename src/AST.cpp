@@ -77,25 +77,6 @@ ExpressionPtr BinOperator::make(ExpressionPtr&& _lhs, const Token& t, Expression
 UnOperator::UnOperator(const Token& t, ExpressionPtr&& _rhs) 
   : op(t), rhs(std::forward<ExpressionPtr>(_rhs)) { }
 
-// std::size_t BinOperator::get_precedence() {
-//   switch (op.type) {
-//     case TOK_STAR: return 5;
-//     case TOK_MODULO: return 5;
-//     case TOK_SLASH: return 5;
-//     case TOK_PLUS: return 6;
-//     case TOK_MINUS: return 6;
-//     case TOK_LESS_EQUAL: return 9;
-//     case TOK_LESS: return 9;
-//     case TOK_GREATER: return 9;
-//     case TOK_GREATER_EQUAL: return 9;
-//     case TOK_BANG_EQUAL: return 10;
-//     case TOK_EQUAL_EQUAL: return 10;
-//     case TOK_AND: return 14;
-//     case TOK_OR: return 15;
-//     default: return 999;
-//   }
-// }
-
 ExpressionPtr UnOperator::make(const Token& t, ExpressionPtr&& _rhs) {
   return std::make_unique<Expression>(
         UnOperator(
