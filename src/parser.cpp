@@ -1,6 +1,6 @@
 #include "parser.hpp"
 
-ModuleAST::Ptr Parser::handle_module() {
+AST::Module Parser::handle_module() {
   set_excstack_breakpoint();
   assertion(peek().type == TOK_MODULE, "module must start with module declaration");
   move_cursor();
@@ -15,15 +15,14 @@ ModuleAST::Ptr Parser::handle_module() {
   move_cursor();
   if (current_ind + 1 < tokens.size()) {
     throw_exception(fmt::format("failed to parse entire file. exception stack:\n{}", fmt::join(exception_stack, "\n")));
-    return nullptr;
   }
   break_excstack();
-  return std::make_unique<ModuleAST>(name, std::move(result));
+  return AST::Module(name, std::move(result));
 }
 
-TopLevelAST::Ptr Parser::handle_top_level() {
+AST::TopLevelPtr Parser::handle_top_level() {
   set_excstack_breakpoint();
-  TopLevelAST::Ptr result;
+  AST::TopLevelPtr result;
   size_t old_ind = current_ind;
   try {
     result = handle_fn_decl();
@@ -42,7 +41,7 @@ TopLevelAST::Ptr Parser::handle_top_level() {
   }
 }
 
-FunctionPrototypeAST::Ptr Parser::handle_fn_proto() {
+AST::FnProto Parser::handle_fn_proto() {
   assertion(peek().type == TOK_FN, "function prototype must start with fn");
   move_cursor();
   auto identifier = peek();
@@ -55,41 +54,49 @@ FunctionPrototypeAST::Ptr Parser::handle_fn_proto() {
   move_cursor();
   assertion(peek().type == TOK_IDENTIFIER, "function prototype must have a return type");
   auto return_type = peek();
-  return std::make_unique<FunctionPrototypeAST>(identifier, std::move(params), return_type); 
+  return AST::FnProto(
+      identifier, 
+      std::forward<std::vector<AST::VarDecl>>(params),
+      return_type); 
 }
 
-ExternFunctionAST::Ptr Parser::handle_extern_fn() {
+AST::TopLevelPtr Parser::handle_extern_fn() {
   assertion(peek().type == TOK_EXTERN, "external function declaration must start with 'extern'");
   move_cursor();
   auto proto = handle_fn_proto();
   move_cursor();
   assertion(peek().type == TOK_SEMICOLON, "missing semicolon");
-  return std::make_unique<ExternFunctionAST>(std::move(proto)); 
+  return AST::Extern::make(
+      std::forward<AST::FnProto>(proto)); 
 }
 
-FunctionDeclarationAST::Ptr Parser::handle_fn_decl() {
+AST::TopLevelPtr Parser::handle_fn_decl() {
   auto proto = handle_fn_proto();
   move_cursor();
   auto scope = handle_scope();
-  return std::make_unique<FunctionDeclarationAST>(std::move(proto), std::move(scope)); 
+  return AST::FnDecl::make(
+      std::forward<AST::FnProto>(proto),
+      std::forward<AST::Scope>(scope)); 
 }
 
-ScopeAST::Ptr Parser::handle_scope() {
+AST::Scope Parser::handle_scope() {
   assertion(peek().type == TOK_LEFT_CURLY, "scope must start with a left curly brace");
   move_cursor();
   
-  auto statements = take_with(&Parser::handle_statement, false);
+  auto statements = take_with(
+      &Parser::handle_statement, false);
 
   assertion(peek().type == TOK_RIGHT_CURLY, "scope must end with a right curly brace");
-  return std::make_unique<ScopeAST>(std::move(statements));
+  return AST::Scope(
+      std::forward<std::vector<AST::StatementPtr>>(statements));
 }
 
-StatementAST::Ptr Parser::handle_statement() {
+AST::StatementPtr Parser::handle_statement() {
   set_excstack_breakpoint();
-  StatementAST::Ptr result;
+  AST::StatementPtr result;
   size_t old_ind = current_ind;
   try {
-    result = handle_vd();
+    result = std::make_unique<AST::Statement>(handle_vd());
     move_cursor();
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
     break_excstack();
@@ -99,7 +106,7 @@ StatementAST::Ptr Parser::handle_statement() {
   } 
   try {
     auto expr = handle_expr();
-    result = std::make_unique<SExpressionAST>(std::move(expr));
+    result = AST::StatExpr::make(std::forward<AST::ExpressionPtr>(expr));
     move_cursor();
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
     break_excstack();
@@ -126,39 +133,35 @@ StatementAST::Ptr Parser::handle_statement() {
   }
 }
 
-ConditionalAST::Ptr Parser::handle_conditional() {
+AST::StatementPtr Parser::handle_conditional() {
   assertion(peek().type == TOK_IF, "conditional must start with if");
   auto id = peek(); 
   move_cursor();
   auto cond = handle_expr();
   move_cursor();
   auto if_body = handle_scope();
+  std::optional<AST::Scope> else_body = std::nullopt;
   if (peek(1).type == TOK_ELSE) {
     move_cursor(2);
-    auto else_body = handle_scope();
-    return std::make_unique<ConditionalAST>(
-        id,
-        std::forward<ExpressionAST::Ptr>(cond),
-        std::forward<ScopeAST::Ptr>(if_body),
-        std::forward<ScopeAST::Ptr>(else_body));
+    else_body = handle_scope();
   }
-  return std::make_unique<ConditionalAST>(
+  return AST::Conditional::make(
       id,
-      std::forward<ExpressionAST::Ptr>(cond),
-      std::forward<ScopeAST::Ptr>(if_body),
-      nullptr);
+      std::forward<AST::ExpressionPtr>(cond),
+      std::forward<AST::Scope>(if_body),
+      std::forward<std::optional<AST::Scope>>(else_body));
 }
 
-ReturnAST::Ptr Parser::handle_return() {
+AST::StatementPtr Parser::handle_return() {
   assertion(peek().type == TOK_RETURN, "return must start with 'return'");
   if (peek(1).type == TOK_SEMICOLON)
-    return std::make_unique<ReturnAST>(nullptr);
+    return AST::Return::make();
   move_cursor();
   auto expr = handle_expr();
-  return std::make_unique<ReturnAST>(std::move(expr));
+  return AST::Return::make(std::forward<AST::ExpressionPtr>(expr));
 }
 
-VariableDeclarationAST::Ptr Parser::handle_vd() {
+AST::VarDecl Parser::handle_vd() {
   assertion(peek().type == TOK_VAR, "variable declaration must start with 'var'");
   move_cursor();
   assertion(peek().type == TOK_IDENTIFIER, "variable declaration must have a type");
@@ -169,36 +172,40 @@ VariableDeclarationAST::Ptr Parser::handle_vd() {
   if (peek(1).type == TOK_EQUAL) {
     move_cursor(2); 
     auto expr = handle_expr();
-    return std::make_unique<VariableDeclarationAST>(type, id, std::move(expr));
+    return AST::VarDecl(type, id, std::move(expr));
   }
-  return std::make_unique<VariableDeclarationAST>(type, id, nullptr);
+  return AST::VarDecl(type, id, nullptr);
 }
 
-ExpressionAST::Ptr Parser::handle_expr() {
+AST::ExpressionPtr Parser::handle_expr() {
   // TODO: fix prioritization
   auto cur = peek();
   
-  ExpressionAST::Ptr result = nullptr;
+  AST::ExpressionPtr result = nullptr;
   if (cur.type == TOK_IDENTIFIER) { 
     if (peek(1).type == TOK_LEFT_PAREN) { // Function call
       move_cursor(2);
       auto args = take_with(&Parser::handle_expr);
       assertion(peek().type == TOK_RIGHT_PAREN, "missing parentheses for function call");
-      result = std::make_unique<FunctionCallAST>(cur, std::move(args));
+      result = AST::FnCall::make(
+          cur, 
+          std::forward<std::vector<AST::ExpressionPtr>>(args));
     }
     else {
-      result = std::make_unique<VariableAST>(cur);
+      result = AST::Variable::make(cur);
     }
   }
 
   if (cur.is_literal()) {
-    result = std::make_unique<LiteralAST>(cur);
+    result = AST::Literal::make(cur);
   }
 
   if (cur.is_unary_op()) {
     move_cursor();
     auto rhs = handle_expr();
-    result = std::make_unique<UnaryOperationAST>(cur, std::move(rhs));
+    result = AST::UnOperator::make(
+        cur, 
+        std::forward<AST::ExpressionPtr>(rhs));
   }
 
   if (cur.type == TOK_LEFT_PAREN) {
@@ -206,7 +213,8 @@ ExpressionAST::Ptr Parser::handle_expr() {
     auto expr = handle_expr();
     move_cursor();
     assertion(peek().type == TOK_RIGHT_PAREN, "missing parentheses for grouping");
-    result = std::make_unique<GroupingAST>(std::move(expr));
+    result = AST::Grouping::make(
+        std::forward<AST::ExpressionPtr>(expr));
   }
 
   // -2 + 3
@@ -218,76 +226,79 @@ ExpressionAST::Ptr Parser::handle_expr() {
   if (result && next.is_binary_op()) {
     move_cursor(2);
     auto rhs = handle_expr();
-    result = std::make_unique<BinaryOperationAST>(std::move(result), next, std::move(rhs));
+    result = AST::BinOperator::make(
+        std::forward<AST::ExpressionPtr>(result), 
+        next, 
+        std::forward<AST::ExpressionPtr>(rhs));
   }
 
-  balance_expr(result);
+  // balance_expr(result);
   
   if (!result)
     throw_exception("failed to parse expression");
   return result;
 }
 
-#define CAST(to_cast, type) &dynamic_cast<type&>(*to_cast.get())
-
-void Parser::balance_unary(ExpressionAST::Ptr& expr) {
-  if (!expr) return;
-  // if expression is unary and rhs is binary then
-  // expression = 
-  //   Binary(Unary(expression -> op, expression -> rhs -> lhs),
-  //          expression -> rhs -> op,
-  //          expression rhs -> rhs);
-
-  try {
-    UnaryOperationAST*  un_expr = CAST(expr, UnaryOperationAST);
-    BinaryOperationAST* bin_rhs = CAST(un_expr -> rhs, BinaryOperationAST);
-    balance_expr(bin_rhs -> rhs);
-    balance_expr(un_expr -> rhs);
-    expr = std::make_unique<BinaryOperationAST>(
-      std::make_unique<UnaryOperationAST>(un_expr -> op, std::move(bin_rhs -> lhs)),
-      bin_rhs -> op,
-      std::move(bin_rhs -> rhs));
-  } catch (std::bad_cast& e) {
-    balance_binary_precedence(expr);
-  }
-}
-
-void Parser::balance_binary_precedence(ExpressionAST::Ptr& expr) {
-  if (!expr) return;
-
-  // 2 * 3 + 4 * 5
-  // 2 * (3 + (4 * 5))
-  // (2 * 3) + (4 * 5)
-  
-  // if expression is binary and rhs is binary then
-  // if this precedence is lower than rhs precedence then
-  // expression = 
-  // rhs = Binary(
-  //  Binary(
-  //    this -> lhs,
-  //    this -> op,
-  //    rhs -> lhs), 
-  //  rhs -> op,
-  //  rhs -> rhs))
-  // 
-
-  try {
-    BinaryOperationAST* this_expr = CAST(expr, BinaryOperationAST);
-    BinaryOperationAST* rhs_expr = CAST(this_expr -> rhs, BinaryOperationAST);
-    balance_expr(this_expr -> lhs);
-    balance_expr(this_expr -> rhs);
-    balance_expr(rhs_expr -> rhs);
-
-    if (this_expr -> get_precedence() < rhs_expr -> get_precedence()) {
-      expr = std::make_unique<BinaryOperationAST>(
-        std::make_unique<BinaryOperationAST>(
-          std::move(this_expr -> lhs),
-          this_expr -> op,
-          std::move(rhs_expr -> lhs)),
-        rhs_expr -> op,
-        std::move(rhs_expr -> rhs));
-    }
-  } catch (std::bad_cast& e) { }
-}
-
-#undef CAST
+// #define CAST(to_cast, type) &dynamic_cast<type&>(*to_cast.get())
+// 
+// void Parser::balance_unary(ExpressionAST::Ptr& expr) {
+//   if (!expr) return;
+//   // if expression is unary and rhs is binary then
+//   // expression = 
+//   //   Binary(Unary(expression -> op, expression -> rhs -> lhs),
+//   //          expression -> rhs -> op,
+//   //          expression rhs -> rhs);
+// 
+//   try {
+//     UnaryOperationAST*  un_expr = CAST(expr, UnaryOperationAST);
+//     BinaryOperationAST* bin_rhs = CAST(un_expr -> rhs, BinaryOperationAST);
+//     balance_expr(bin_rhs -> rhs);
+//     balance_expr(un_expr -> rhs);
+//     expr = std::make_unique<BinaryOperationAST>(
+//       std::make_unique<UnaryOperationAST>(un_expr -> op, std::move(bin_rhs -> lhs)),
+//       bin_rhs -> op,
+//       std::move(bin_rhs -> rhs));
+//   } catch (std::bad_cast& e) {
+//     balance_binary_precedence(expr);
+//   }
+// }
+// 
+// void Parser::balance_binary_precedence(ExpressionAST::Ptr& expr) {
+//   if (!expr) return;
+// 
+//   // 2 * 3 + 4 * 5
+//   // 2 * (3 + (4 * 5))
+//   // (2 * 3) + (4 * 5)
+//   
+//   // if expression is binary and rhs is binary then
+//   // if this precedence is lower than rhs precedence then
+//   // expression = 
+//   // rhs = Binary(
+//   //  Binary(
+//   //    this -> lhs,
+//   //    this -> op,
+//   //    rhs -> lhs), 
+//   //  rhs -> op,
+//   //  rhs -> rhs))
+//   // 
+// 
+//   try {
+//     BinaryOperationAST* this_expr = CAST(expr, BinaryOperationAST);
+//     BinaryOperationAST* rhs_expr = CAST(this_expr -> rhs, BinaryOperationAST);
+//     balance_expr(this_expr -> lhs);
+//     balance_expr(this_expr -> rhs);
+//     balance_expr(rhs_expr -> rhs);
+// 
+//     if (this_expr -> get_precedence() < rhs_expr -> get_precedence()) {
+//       expr = std::make_unique<BinaryOperationAST>(
+//         std::make_unique<BinaryOperationAST>(
+//           std::move(this_expr -> lhs),
+//           this_expr -> op,
+//           std::move(rhs_expr -> lhs)),
+//         rhs_expr -> op,
+//         std::move(rhs_expr -> rhs));
+//     }
+//   } catch (std::bad_cast& e) { }
+// }
+// 
+// #undef CAST

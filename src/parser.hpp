@@ -93,27 +93,26 @@ class Parser {
     if (!condition) throw_exception(message);
   }
 
-  TopLevelAST::Ptr handle_top_level();
-  FunctionDeclarationAST::Ptr handle_fn_decl(); 
-  ExternFunctionAST::Ptr handle_extern_fn(); 
-  FunctionPrototypeAST::Ptr handle_fn_proto(); 
-  ScopeAST::Ptr handle_scope(); 
-  StatementAST::Ptr handle_statement(); 
-  ReturnAST::Ptr handle_return(); 
-  VariableDeclarationAST::Ptr handle_vd();
-  ModuleAST::Ptr handle_module();
-  ConditionalAST::Ptr handle_conditional();
-
-  ExpressionAST::Ptr handle_expr();
+  AST::TopLevelPtr   handle_top_level();
+  AST::TopLevelPtr   handle_fn_decl(); 
+  AST::TopLevelPtr   handle_extern_fn(); 
+  AST::FnProto       handle_fn_proto(); 
+  AST::Scope         handle_scope(); 
+  AST::StatementPtr  handle_statement(); 
+  AST::StatementPtr  handle_return(); 
+  AST::VarDecl       handle_vd();
+  AST::Module        handle_module();
+  AST::StatementPtr  handle_conditional();
+  AST::ExpressionPtr handle_expr();
   
-  void balance_expr(ExpressionAST::Ptr& expr) {
-    balance_unary(expr); 
-  }
-  void balance_unary(ExpressionAST::Ptr& expr);
-  void balance_binary_precedence(ExpressionAST::Ptr& expr);
+  // void balance_expr(ExpressionAST::Ptr& expr) {
+  //   balance_unary(expr); 
+  // }
+  // void balance_unary(ExpressionAST::Ptr& expr);
+  // void balance_binary_precedence(ExpressionAST::Ptr& expr);
 
 public:
-  ModuleAST::Ptr parse(std::vector<Token> input) {
+  AST::Module parse(std::vector<Token> input) {
     tokens = input;
     current_ind = 0;
     return handle_module();

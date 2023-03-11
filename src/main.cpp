@@ -50,11 +50,11 @@ Return_values file_read(std::string file) {
     auto ast = parser.parse(tokens);
     fmt::print(stderr, "[PARSER PASS]\n");
 
-    Interpreter interp(std::forward<ModuleAST::Ptr>(ast));
-    auto result = interp.run();
-    fmt::print(stderr, "[INTERPRETER PASS]\n");
-
-    llvm::outs() << *result << '\n';
+//     Interpreter interp(std::forward<ModuleAST::Ptr>(ast));
+//     auto result = interp.run();
+//     fmt::print(stderr, "[INTERPRETER PASS]\n");
+// 
+//     llvm::outs() << *result << '\n';
     
     return SUCCESS;
   } catch (lexer_exception& e) {
@@ -65,10 +65,12 @@ Return_values file_read(std::string file) {
     fmt::print(stderr, "[PARSER ERROR]  {}\n", e.what());
     return PARSER_ERROR;
 
-  } catch (interpreter_exception& e) {
-    fmt::print(stderr, "[INTERPRETER ERROR]  {}\n", e.what());
-    return INTERPRETER_ERROR;
-  } catch (std::exception& e) {
+  } 
+//  catch (interpreter_exception& e) {
+//    fmt::print(stderr, "[INTERPRETER ERROR]  {}\n", e.what());
+//    return INTERPRETER_ERROR;
+//  } 
+  catch (std::exception& e) {
     fmt::print(stderr, "[UNEXPECTED ERROR]  {}\n", e.what());
     return UNEXPECTED_ERROR;
   }
