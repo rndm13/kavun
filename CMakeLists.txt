@@ -36,6 +36,7 @@ llvm_map_components_to_libnames(llvm_libs support core irreader passes target MC
 project(kavun)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
+
 add_subdirectory(src)
 add_subdirectory(lib)
 
@@ -46,21 +47,4 @@ target_link_libraries(${PROJECT_NAME}
   -fsanitize=address # Debug only
   )
 
-# ------ tests -------
-
-include(CTest)
-
-set (lexer_error_regex "[LEXER ERROR]")
-set (lexer_pass_regex  "[LEXER PASS]")
-
-add_test(NAME lexer_pass1 COMMAND kavun tests/valid_program1.kvn)
-set_property(TEST lexer_pass1 PROPERTY PASS_REGULAR_EXPRESSION "${lexer_pass_regex}")
-
-add_test(NAME no_end_of_string COMMAND kavun tests/lexer_fail_no_end_string.kvn)
-set_property(TEST no_end_of_string PROPERTY PASS_REGULAR_EXPRESSION "${lexer_error_regex}")
-
-add_test(NAME double_floating_points COMMAND kavun tests/lexer_fail_2_points.kvn)
-set_property(TEST double_floating_points PROPERTY PASS_REGULAR_EXPRESSION "${lexer_error_regex}")
-
-add_test(NAME invalid_character COMMAND kavun tests/lexer_fail_inv_char.kvn)
-set_property(TEST invalid_character PROPERTY PASS_REGULAR_EXPRESSION "${lexer_error_regex}")
+add_subdirectory(tests)
