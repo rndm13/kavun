@@ -96,7 +96,7 @@ public:
 
   CodeGenerator();
 
-  // void optimize_module(llvm::Module*);
+  void optimize_module();
 
   // void print_mc(llvm::Module* module_ptr, std::string file_name = "output.o") {
   //   auto target_triple = llvm::sys::getDefaultTargetTriple();
