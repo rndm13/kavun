@@ -146,9 +146,9 @@ void CodeGenerator::operator()(const AST::FnDecl& decl) {
   auto scope = operator()(decl.body, "function_entry", func);
 
   scope_stack.pop_scope(); // read above todo
-  if (!scope -> getTerminator()) {
+  if (!the_builder -> GetInsertBlock() -> getTerminator()) {
     throw interpreter_exception(decl.proto.id, "function is not terminated (not all codepaths return a value)");
-  }
+  } 
 }
 
 // Statements

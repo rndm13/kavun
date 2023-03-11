@@ -1,0 +1,7 @@
+module codepaths;
+
+fn main() i32 {
+  if false {
+    return 1;
+  }
+}
