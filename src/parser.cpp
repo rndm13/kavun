@@ -174,7 +174,7 @@ AST::VarDecl Parser::handle_vd() {
     auto expr = handle_expr();
     return AST::VarDecl(type, id, std::move(expr));
   }
-  return AST::VarDecl(type, id, nullptr);
+  return AST::VarDecl(type, id, std::nullopt);
 }
 
 AST::ExpressionPtr Parser::handle_expr() {

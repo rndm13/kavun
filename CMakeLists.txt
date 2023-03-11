@@ -40,7 +40,7 @@ add_subdirectory(src)
 add_subdirectory(lib)
 
 target_link_libraries(${PROJECT_NAME}
-  PRIVATE lexer parser AST
+  PRIVATE lexer parser AST code_generator
   PRIVATE fmt::fmt
   PRIVATE ${llvm_libs}
   -fsanitize=address # Debug only
