@@ -111,6 +111,7 @@ class Parser {
   }
   void balance_unary(ExpressionAST::Ptr& expr);
   void balance_binary_precedence(ExpressionAST::Ptr& expr);
+
 public:
   ModuleAST::Ptr parse(std::vector<Token> input) {
     tokens = input;

@@ -37,6 +37,7 @@ project(kavun)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 add_subdirectory(src)
+add_subdirectory(lib)
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE lexer parser AST

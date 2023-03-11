@@ -286,7 +286,6 @@ std::unique_ptr<llvm::Module>&& ModuleAST::codegen(Interpreter* interp) {
   return std::move(the_module);
 }
 
-
 void Interpreter::optimize_module(llvm::Module* module_ptr) {
   // Create the analysis managers.
   llvm::LoopAnalysisManager LAM;
