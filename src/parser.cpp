@@ -177,9 +177,9 @@ AST::VarDecl Parser::handle_vd() {
   return AST::VarDecl(type, id, std::nullopt);
 }
 
-bool Parser::match(std::vector<TokenType> to_match) {
+bool Parser::match(std::vector<TokenType> to_match, int to_peek) {
   for (auto tok : to_match) {
-    if (peek(1).type == tok) {
+    if (peek(to_peek).type == tok) {
       move_cursor();
       return true;
     }
@@ -195,7 +195,7 @@ AST::ExpressionPtr Parser::disjunction() {
   auto expr = conjunction();
 
   while (match({TOK_OR})) {
-    auto op = peek();
+    auto op = peek(0);
     move_cursor();
     auto right = conjunction();
     expr = AST::BinOperator::make(
@@ -288,9 +288,8 @@ AST::ExpressionPtr Parser::factor() {
 }
 
 AST::ExpressionPtr Parser::unary() {
-  if (match({TOK_MINUS, TOK_BANG})) {
-    auto op = peek();
-    move_cursor();
+  if (match({TOK_MINUS, TOK_BANG}, 0)) {
+    auto op = peek(-1);
     auto right = unary();
     return AST::UnOperator::make(
         op,

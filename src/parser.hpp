@@ -115,7 +115,7 @@ class Parser {
   AST::ExpressionPtr conjunction();
   AST::ExpressionPtr disjunction();
   
-  bool match(std::vector<TokenType>);
+  bool match(std::vector<TokenType>, int to_peek = 1);
 
 public:
   AST::Module parse(std::vector<Token> input) {

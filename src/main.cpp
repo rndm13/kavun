@@ -81,7 +81,6 @@ int main(int argc, char* argv[]) {
   if (argc > 1) {
     return file_read(argv[1]);
   } else {
-    // repl or usage
+    return SUCCESS;
   }
-  return SUCCESS;
 }

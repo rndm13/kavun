@@ -200,7 +200,7 @@ void CodeGenerator::operator()(const AST::Conditional& cond) {
     the_builder -> CreateBr(after_block);
   }
 
-  if (else_block && else_block -> getTerminator()) {
+  if (else_block && !else_block -> getTerminator()) {
     the_builder -> SetInsertPoint(else_block);
 
     the_builder -> CreateBr(after_block);

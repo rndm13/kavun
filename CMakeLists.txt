@@ -47,4 +47,6 @@ target_link_libraries(${PROJECT_NAME}
   -fsanitize=address # Debug only
   )
 
+enable_testing()
+
 add_subdirectory(tests)
