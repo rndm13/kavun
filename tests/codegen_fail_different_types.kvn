@@ -1,0 +1,5 @@
+module types;
+
+fn main() void {
+  return 3 + true;
+}  

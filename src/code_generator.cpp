@@ -229,17 +229,48 @@ void CodeGenerator::operator()(const AST::VarDecl& var_decl) {
       var_decl.id, nullptr);
   else
     scope_stack.set_named_value(
-      var_decl.id, operator()(var_decl.opt_expression.value()));
+      var_decl.id, operator()(
+        var_decl.opt_expression.value()));
 }
 
-// Expression
-llvm::Value* CodeGenerator::operator()(const AST::BinOperator& bin_op) { 
-  llvm::Value* lhs_eval = operator()(bin_op.lhs);
-  llvm::Value* rhs_eval = operator()(bin_op.rhs);
-  if (!lhs_eval || !rhs_eval) {
-    throw interpreter_exception(bin_op.op, "void cannot be an operand");
-    return nullptr;
+llvm::Value* CodeGenerator::binOpFloat(
+    const AST::BinOperator& bin_op,
+    llvm::Value* lhs_eval,
+    llvm::Value* rhs_eval) {
+  switch (bin_op.op.type) {
+    break; case TOK_MODULO:
+      return the_builder -> CreateFRem(lhs_eval, rhs_eval, "remtmp");
+    break; case TOK_PLUS:
+      return the_builder -> CreateFAdd(lhs_eval, rhs_eval, "addtmp");
+    break; case TOK_MINUS:
+      return the_builder -> CreateFSub(lhs_eval, rhs_eval, "subtmp");
+    break; case TOK_STAR:
+      return the_builder -> CreateFMul(lhs_eval, rhs_eval, "multmp");
+    break; case TOK_SLASH:
+      return the_builder -> CreateFDiv(lhs_eval, rhs_eval, "divtmp");
+    break; case TOK_LESS:
+      return the_builder -> CreateFCmpOLT(lhs_eval, rhs_eval, "lesstmp");
+    break; case TOK_LESS_EQUAL:
+      return the_builder -> CreateFCmpOLE(lhs_eval, rhs_eval, "lesseqtmp");
+    break; case TOK_GREATER:
+      return the_builder -> CreateFCmpOGT(lhs_eval, rhs_eval, "greattmp");
+    break; case TOK_GREATER_EQUAL:
+      return the_builder -> CreateFCmpOGE(lhs_eval, rhs_eval, "greateqtmp");
+    break; case TOK_BANG_EQUAL:
+      return the_builder -> CreateFCmpONE(lhs_eval, rhs_eval, "noteqtmp");
+    break; case TOK_EQUAL_EQUAL:
+      return the_builder -> CreateFCmpOEQ(lhs_eval, rhs_eval, "eqtmp");
+    break; default: 
+      throw interpreter_exception(
+          bin_op.op,
+          "unknown binary operator for floating types");
   }
+}
+
+llvm::Value* CodeGenerator::binOpInteger(
+    const AST::BinOperator& bin_op,
+    llvm::Value* lhs_eval,
+    llvm::Value* rhs_eval) {
 
   switch (bin_op.op.type) {
     break; case TOK_MODULO:
@@ -252,10 +283,6 @@ llvm::Value* CodeGenerator::operator()(const AST::BinOperator& bin_op) {
       return the_builder -> CreateMul(lhs_eval, rhs_eval, "multmp");
     break; case TOK_SLASH:
       return the_builder -> CreateSDiv(lhs_eval, rhs_eval, "divtmp");
-    break; case TOK_OR:
-      return the_builder -> CreateOr(lhs_eval, rhs_eval, "ortmp");
-    break; case TOK_AND:
-      return the_builder -> CreateAnd(lhs_eval, rhs_eval, "andtmp");
     break; case TOK_LESS:
       return the_builder -> CreateICmpSLT(lhs_eval, rhs_eval, "lesstmp");
     break; case TOK_LESS_EQUAL:
@@ -269,9 +296,50 @@ llvm::Value* CodeGenerator::operator()(const AST::BinOperator& bin_op) {
     break; case TOK_EQUAL_EQUAL:
       return the_builder -> CreateICmpEQ(lhs_eval, rhs_eval, "eqtmp");
     break; default: 
-      throw std::runtime_error(
-          fmt::format("Unknown binary operator '{}'", bin_op.op.lexeme));
+      throw interpreter_exception(
+          bin_op.op,
+          "unknown binary operator for integer types");
   }
+}
+
+llvm::Value* CodeGenerator::binOpBoolean(
+    const AST::BinOperator& bin_op,
+    llvm::Value* lhs_eval,
+    llvm::Value* rhs_eval) {
+  switch (bin_op.op.type) {
+    break; case TOK_OR:
+      return the_builder -> CreateOr(lhs_eval, rhs_eval, "ortmp");
+    break; case TOK_AND:
+      return the_builder -> CreateAnd(lhs_eval, rhs_eval, "andtmp");
+    break; default: 
+      throw interpreter_exception(
+          bin_op.op,
+          "unknown binary operator for bool types");
+  }
+}
+
+// Expression
+llvm::Value* CodeGenerator::operator()(const AST::BinOperator& bin_op) { 
+  llvm::Value* lhs_eval = operator()(bin_op.lhs);
+  llvm::Value* rhs_eval = operator()(bin_op.rhs);
+  if (!lhs_eval || !rhs_eval) {
+    throw interpreter_exception(bin_op.op, "void cannot be an operand");
+    return nullptr;
+  }
+
+  if (lhs_eval -> getType() -> isFloatingPointTy() || rhs_eval -> getType() -> isFloatingPointTy()) {
+    return binOpFloat(bin_op, lhs_eval, rhs_eval);
+  }
+
+  if (lhs_eval -> getType() -> isIntegerTy(1) || rhs_eval -> getType() -> isIntegerTy(1)) {
+    return binOpBoolean(bin_op, lhs_eval, rhs_eval);
+  }
+
+  if (lhs_eval -> getType() -> isIntegerTy() || rhs_eval -> getType() -> isIntegerTy()) {
+    return binOpInteger(bin_op, lhs_eval, rhs_eval);
+  }
+
+  throw interpreter_exception(bin_op.op, "no available operators for those types");
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::UnOperator& un_op) {
@@ -282,20 +350,22 @@ llvm::Value* CodeGenerator::operator()(const AST::UnOperator& un_op) {
     return nullptr;
   }
 
-  // TODO: add for different types
-  // e.g. CreateFNeg for float
-  switch (un_op.op.type) {
-    break; case TOK_MINUS:
-      return the_builder -> 
-        CreateNeg(rhs_eval, "negtmp");
-    break; case TOK_BANG:
-      return the_builder -> 
-        CreateNot(rhs_eval, "nottmp");
-    break; default: 
-      throw std::runtime_error(
-          fmt::format("Unknown unary operator '{}'", un_op.op.lexeme));
-      return nullptr;
+  if (un_op.op.type == TOK_BANG && rhs_eval -> getType() -> isIntegerTy(1)) {
+    return the_builder -> CreateNot(rhs_eval, "nottmp");
   }
+
+  if (un_op.op.type == TOK_MINUS && 
+      rhs_eval -> getType() -> isIntegerTy()) {
+    return the_builder -> CreateNeg(rhs_eval, "negtmp");
+  }
+
+  if (un_op.op.type == TOK_MINUS && 
+      rhs_eval -> getType() -> isFloatingPointTy()) {
+    return the_builder -> CreateFNeg(rhs_eval, "negtmp");
+  }
+  throw interpreter_exception(
+      un_op.op,
+      "unknown unary operator for this type");
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::Literal& literal) {

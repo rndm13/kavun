@@ -94,6 +94,13 @@ public:
   llvm::Value* operator()(const AST::Grouping&);
   llvm::Value* operator()(const AST::FnCall&);
 
+  llvm::Value* binOpFloat
+    (const AST::BinOperator&, llvm::Value*, llvm::Value*);
+  llvm::Value* binOpInteger
+    (const AST::BinOperator&, llvm::Value*, llvm::Value*);
+  llvm::Value* binOpBoolean
+    (const AST::BinOperator&, llvm::Value*, llvm::Value*);
+
   CodeGenerator();
 
   void optimize_module();
