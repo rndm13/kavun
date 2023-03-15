@@ -13,6 +13,7 @@ create_test_sourcelist (Tests
   conditional.kvn
   empty_module.kvn
   extern_test.kvn
+  double_literal.kvn
   factorial.kvn
   fibonacci.kvn
   fizzbuzz.kvn

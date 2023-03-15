@@ -386,6 +386,9 @@ llvm::Value* CodeGenerator::operator()(const AST::Literal& literal) {
     return the_builder ->
         getInt1(std::get<bool>(literal.value.literal));
   }
+  if (std::holds_alternative<double>(literal.value.literal)) {
+    return llvm::ConstantFP::get(*the_context, llvm::APFloat(std::get<double>(literal.value.literal)));
+  }
   throw std::runtime_error("this type is not implemented yet");
 }
 
@@ -447,6 +450,8 @@ CodeGenerator::CodeGenerator() {
   // TODO: change string to a class
   type_lookup["string"] = 
     llvm::PointerType::get(llvm::Type::getInt8Ty(*the_context), 0); 
+  type_lookup["double"] =
+    llvm::Type::getDoubleTy(*the_context);
 
   // TODO: add double
 }

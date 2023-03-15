@@ -1,0 +1,8 @@
+module ptr;
+
+extern fn printf(var string str) void;
+
+fn main() void {
+  printf("hello" + 2);
+  return;
+}

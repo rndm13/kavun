@@ -1,6 +1,12 @@
 module test;
 
+extern fn printf(
+  var string str 
+  var double d) void;
+
 fn main() i32 {
   var double t = 3.5;
-  return int(3.5 + 3 + t);
+
+  printf("%f\n" t + 2.5);
+  return 0;
 }
