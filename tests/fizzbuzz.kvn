@@ -1,8 +1,8 @@
 module fizzbuzz;
 
-extern fn printf(var string text, var i32 num) void;
+extern fn printf(string text, i32 num) void;
 
-fn fizzbuzz(var i32 num) void {
+fn fizzbuzz(i32 num) void {
   if num % 3 == 0 {
     printf("Fizz", 0);
   }
@@ -19,7 +19,7 @@ fn fizzbuzz(var i32 num) void {
   return;
 }
 
-fn loop(var i32 cur, var i32 max) void {
+fn loop(i32 cur, i32 max) void {
   if cur >= max {
     return;
   }

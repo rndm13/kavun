@@ -1,6 +1,6 @@
 module unary;
 
-extern fn printf(var string text, var i32 num) void;
+extern fn printf(string text, i32 num) void;
 
 fn main() void {
   var i32 num = - 10 + - 10;

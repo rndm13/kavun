@@ -1,6 +1,6 @@
 module cond;
 
-extern fn printf(var string text) void;
+extern fn printf(string text) void;
 
 fn main() void {
   if 2 == 2 {

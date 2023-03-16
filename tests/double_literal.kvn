@@ -1,6 +1,6 @@
 module test;
 
-extern fn printf(var string str, var double d) void;
+extern fn printf(string, double) void;
 
 fn main() i32 {
   var double t = 3.5;

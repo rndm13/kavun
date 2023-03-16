@@ -47,6 +47,7 @@ class Parser {
     if (!condition) throw_exception(message);
   }
 
+  AST::ParamDecl     handle_param_decl();
   AST::TopLevelPtr   handle_top_level();
   AST::TopLevelPtr   handle_fn_decl(); 
   AST::TopLevelPtr   handle_extern_fn(); 

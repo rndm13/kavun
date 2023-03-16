@@ -17,6 +17,7 @@
 namespace AST {
 struct Module;
 
+struct ParamDecl;
 struct FnProto;
 struct Scope;
 
@@ -52,10 +53,10 @@ using ExpressionPtr = std::unique_ptr<Expression>;
 
 struct FnProto {
   Token id;
-  std::vector<VarDecl> parameters;
+  std::vector<ParamDecl> parameters;
   Token return_type;
 
-  FnProto(const Token& _id, std::vector<VarDecl>&& _params, const Token& _return_type);
+  FnProto(const Token& _id, std::vector<ParamDecl>&& _params, const Token& _return_type);
 };
 
 struct Scope {
@@ -76,13 +77,20 @@ struct Return {
   static StatementPtr make(std::optional<ExpressionPtr>&& _expression = std::nullopt);
 };
 
+struct ParamDecl {
+  Token type;
+  std::optional<Token> id;
+
+  ParamDecl(const Token&, const std::optional<Token>&);
+};
+
 struct VarDecl {
   Token type;
   Token id;
-  std::optional<ExpressionPtr> opt_expression{nullptr};
+  ExpressionPtr expression;
 
-  VarDecl(const Token& _type, const Token& _id, std::optional<ExpressionPtr>&& _expr = std::nullopt);
-  static StatementPtr make(const Token&, const Token&, std::optional<ExpressionPtr>&& _expr = std::nullopt);
+  VarDecl(const Token& _type, const Token& _id, ExpressionPtr&& _expr);
+  static StatementPtr make(const Token&, const Token&, ExpressionPtr&& _expr);
 };
 
 struct Literal {

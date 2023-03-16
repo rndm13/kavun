@@ -1,6 +1,6 @@
 module bool;
 
-extern fn printf(var string text) void;
+extern fn printf(string text) void;
 
 fn main() void {
   var bool flag = false;

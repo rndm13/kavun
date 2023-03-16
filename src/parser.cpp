@@ -27,6 +27,17 @@ AST::TopLevelPtr Parser::handle_top_level() {
   throw_exception("failed to parse top level");
 }
 
+AST::ParamDecl Parser::handle_param_decl() {
+  assertion(peek().type == TOK_IDENTIFIER, "parameter declaration must have a type");
+  auto type = peek();
+  std::optional<Token> name;
+  if (peek(1).type == TOK_IDENTIFIER) {
+    move_cursor();
+    name = peek();
+  }
+  return AST::ParamDecl(type, name);
+}
+
 AST::FnProto Parser::handle_fn_proto() {
   assertion(peek().type == TOK_FN, "function prototype must start with fn");
   move_cursor();
@@ -35,12 +46,12 @@ AST::FnProto Parser::handle_fn_proto() {
   move_cursor();
   assertion(peek().type == TOK_LEFT_PAREN, "function prototype parameters missing left parenthesis");
   move_cursor();
-  std::vector<AST::VarDecl> params;
+  std::vector<AST::ParamDecl> params;
 
   while(!is_end()) {
     if (peek().type == TOK_RIGHT_PAREN)
       break;
-    params.push_back(handle_vd());
+    params.push_back(handle_param_decl());
     move_cursor();
     if (peek().type == TOK_RIGHT_PAREN)
       break;
@@ -55,7 +66,7 @@ AST::FnProto Parser::handle_fn_proto() {
   auto return_type = peek();
   return AST::FnProto(
       identifier, 
-      std::forward<std::vector<AST::VarDecl>>(params),
+      std::forward<std::vector<AST::ParamDecl>>(params),
       return_type); 
 }
 
@@ -157,12 +168,14 @@ AST::VarDecl Parser::handle_vd() {
   move_cursor();
   assertion(peek().type == TOK_IDENTIFIER, "variable name must be a valid identifier");
   auto id = peek();
-  if (peek(1).type == TOK_EQUAL) {
-    move_cursor(2); 
-    auto expr = handle_expr();
-    return AST::VarDecl(type, id, std::move(expr));
-  }
-  return AST::VarDecl(type, id, std::nullopt);
+  move_cursor();
+  assertion(peek().type == TOK_EQUAL, "variable is uninitialized");
+  move_cursor(); 
+  auto expr = handle_expr();
+  return AST::VarDecl(
+      type,
+      id, 
+      std::forward<AST::ExpressionPtr>(expr));
 }
 
 bool Parser::match(std::vector<TokenType> to_match, int to_peek) {

@@ -1,6 +1,6 @@
 module conditional;
 
-extern fn printf(var string text) void;
+extern fn printf(string) void;
 
 fn main() void {
   printf("Start\n");

@@ -159,8 +159,10 @@ void CodeGenerator::operator()(const AST::FnDecl& decl) {
                            // to not being able to set argument names to scope
 
   for (size_t i = 0; i < decl.proto.parameters.size(); ++i) {
+    if (!decl.proto.parameters[i].id)
+      continue;
     scope_stack.add_variable(
-        decl.proto.parameters[i].id, 
+        decl.proto.parameters[i].id.value(), 
         func -> getFunctionType() -> getParamType(i),
         func -> getArg(i));
   }
@@ -246,17 +248,11 @@ void CodeGenerator::operator()(const AST::Return& ret) {
 }
 
 void CodeGenerator::operator()(const AST::VarDecl& var_decl) {
-  if (!var_decl.opt_expression) 
-    scope_stack.add_variable(
-      var_decl.id,
-      get_type(var_decl.type),
-      nullptr);
-  else
-    scope_stack.add_variable(
-      var_decl.id, 
-      get_type(var_decl.type),
-      operator()(
-        var_decl.opt_expression.value()));
+  scope_stack.add_variable(
+    var_decl.id, 
+    get_type(var_decl.type),
+    operator()(
+      var_decl.expression));
 }
 
 llvm::Value* CodeGenerator::binOpFloat(

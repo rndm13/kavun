@@ -2,7 +2,10 @@
 
 namespace AST {
 
-FnProto::FnProto(const Token& _id, std::vector<VarDecl>&& _params, const Token& _return_type) 
+ParamDecl::ParamDecl(const Token& _type, const std::optional<Token>& _id) 
+  : type(_type), id(_id) { }
+
+FnProto::FnProto(const Token& _id, std::vector<ParamDecl>&& _params, const Token& _return_type) 
   : id (_id), return_type(_return_type) {
   for (auto& param : _params) {
     parameters.emplace_back(std::move(param));
@@ -33,18 +36,19 @@ StatementPtr Return::make(std::optional<ExpressionPtr>&& _expression) {
       Return(std::forward<std::optional<ExpressionPtr>>(_expression)));
 }
 
-VarDecl::VarDecl(const Token& _type, const Token& _id, std::optional<ExpressionPtr>&& _expr) 
+VarDecl::VarDecl(const Token& _type, const Token& _id, ExpressionPtr&& _expr) 
   : type(_type), 
     id(_id), 
-    opt_expression(std::forward<std::optional<ExpressionPtr>>(_expr)) { }
+    expression(std::forward<ExpressionPtr>(_expr)) { }
 
-StatementPtr VarDecl::make(const Token& _type, const Token& _id, std::optional<ExpressionPtr>&& _expr) {
+StatementPtr VarDecl::make(const Token& _type, const Token& _id, ExpressionPtr&& _expr) {
   return std::make_unique<Statement>(
       VarDecl(
         _type,
         _id,
-        std::forward<std::optional<ExpressionPtr>>(_expr)));
+        std::forward<ExpressionPtr>(_expr)));
 }
+
 
 Literal::Literal(const Token& t) : value(t) { }
 ExpressionPtr Literal::make(const Token& t) {

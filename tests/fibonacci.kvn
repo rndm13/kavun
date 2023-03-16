@@ -1,15 +1,15 @@
 module fibonacci;
 
-extern fn printf(var string t, var i32 n1) void;
+extern fn printf(string t, i32 n1) void;
 
-fn fib(var i32 input) i32 {
+fn fib(i32 input) i32 {
   if input <= 1 {
     return 1;
   }
   return fib(input - 2) + fib(input - 1);
 }
 
-fn loop(var i32 cur, var i32 max) void {
+fn loop(i32 cur, i32 max) void {
   if cur >= max {
     return;
   }

@@ -1,6 +1,6 @@
 module prec;
 
-extern fn printf(var string text, var i32 num) void;
+extern fn printf(string text, i32 num) void;
 
 fn main() void {
   var i32 expr = 2 * 3 + 4 * 5;
