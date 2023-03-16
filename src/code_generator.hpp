@@ -37,14 +37,33 @@ public:
   virtual const char* what();
 };
 
-class ScopeStack : protected std::stack<std::map<std::string, llvm::Value*>> {
+struct VariableData {
+  llvm::Type*  type;
+  llvm::Value* value; // ptr to stack. Use load, alloca and store
+  // Possibly make those fields std::unique_ptr?
+};
+
+class ScopeData {
+  std::unordered_map<std::string, VariableData> variables;
+public:
+  bool terminated;
+
+  void add_variable(const Token&, llvm::Type*, llvm::Value*);
+  bool check_variable(const Token&) const;
+  const VariableData& get_variable(const Token&) const;
+};
+
+class ScopeStack {
+  std::list<ScopeData> data;
+
   public:
 
   void add_scope();
   void pop_scope();
 
-  void set_named_value(const Token&, llvm::Value*);
-  llvm::Value* get_named_value(const Token&);
+  void add_variable(const Token&, llvm::Type*, llvm::Value*);
+  bool check_variable(const Token&) const;
+  const VariableData& get_variable(const Token&) const;
 };
 
 class CodeGenerator {

@@ -11,39 +11,60 @@ void CodeGenerator::warn(Token tok, const std::string_view& in) {
 
 const char* interpreter_exception::what() {
   return info.c_str();
+} 
+ 
+void ScopeData::add_variable(const Token& tok, llvm::Type* type, llvm::Value* value) {
+  variables.insert(
+      std::make_pair(
+        tok.lexeme,
+        VariableData{type, value}));
+}
+
+bool ScopeData::check_variable(const Token& tok) const {
+  return variables.contains(tok.lexeme);
+}
+
+const VariableData& ScopeData::get_variable(const Token& tok) const {
+  return variables.at(tok.lexeme);
 }
 
 void ScopeStack::add_scope() {
-  emplace();
+  data.emplace_back();
 }
 
 void ScopeStack::pop_scope() {
-  if (empty()) {
+  if (data.empty()) {
     throw std::runtime_error("cannot pop empty scope stack"); 
   } else {
-    pop();
+    data.pop_back();
   }
 }
 
-void ScopeStack::set_named_value(
+bool ScopeStack::check_variable(const Token& name) const {
+  for (auto& scope : data) {
+    if (scope.check_variable(name))
+      return true;
+  }
+  return false;
+}
+
+void ScopeStack::add_variable(
     const Token& name, 
+    llvm::Type*  type,
     llvm::Value* value) {
-  if (empty()) {
+  if (data.empty()) {
     // TODO: probably make a global constant
-    throw std::runtime_error("cannot add named value with empty stack"); 
+    throw std::runtime_error("cannot add variable with empty stack"); 
   }
-  top().insert(
-      std::make_pair(
-        name.lexeme,
-        value));
+  data.back().add_variable(name, type, value);
 }
 
-llvm::Value* ScopeStack::get_named_value(const Token& name) {
-  for (auto& m : c) {
-    if (m.contains(name.lexeme))
-      return m[name.lexeme];
+const VariableData& ScopeStack::get_variable(const Token& name) const {
+  for (auto& scope : data) {
+    if (scope.check_variable(name))
+      return scope.get_variable(name);
   }
-  throw interpreter_exception(name, "no such named value");
+  throw interpreter_exception(name, "no such variable");
 }
 
 llvm::Function* CodeGenerator::get_function(Token identifier) {
@@ -138,9 +159,10 @@ void CodeGenerator::operator()(const AST::FnDecl& decl) {
                            // to not being able to set argument names to scope
 
   for (size_t i = 0; i < decl.proto.parameters.size(); ++i) {
-    scope_stack.set_named_value(
+    scope_stack.add_variable(
         decl.proto.parameters[i].id, 
-        std::move(func -> getArg(i)));
+        func -> getFunctionType() -> getParamType(i),
+        func -> getArg(i));
   }
 
   auto scope = operator()(decl.body, "function_entry", func);
@@ -225,11 +247,15 @@ void CodeGenerator::operator()(const AST::Return& ret) {
 
 void CodeGenerator::operator()(const AST::VarDecl& var_decl) {
   if (!var_decl.opt_expression) 
-    scope_stack.set_named_value(
-      var_decl.id, nullptr);
+    scope_stack.add_variable(
+      var_decl.id,
+      get_type(var_decl.type),
+      nullptr);
   else
-    scope_stack.set_named_value(
-      var_decl.id, operator()(
+    scope_stack.add_variable(
+      var_decl.id, 
+      get_type(var_decl.type),
+      operator()(
         var_decl.opt_expression.value()));
 }
 
@@ -393,7 +419,7 @@ llvm::Value* CodeGenerator::operator()(const AST::Literal& literal) {
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::Variable& var) {
-  return scope_stack.get_named_value(var.id);
+  return scope_stack.get_variable(var.id).value;
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::Grouping& group) {
@@ -482,5 +508,5 @@ void CodeGenerator::optimize_module() {
       llvm::PassBuilder::OptimizationLevel::O2);
 
   // Optimize the IR!
-  MPM.run(*the_module, MAM); 
+  MPM.run(*the_module, MAM);
 }
