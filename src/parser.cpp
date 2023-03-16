@@ -1,7 +1,6 @@
 #include "parser.hpp"
 
 AST::Module Parser::handle_module() {
-  set_excstack_breakpoint();
   assertion(peek().type == TOK_MODULE, "module must start with module declaration");
   move_cursor();
   assertion(peek().type == TOK_IDENTIFIER, "module must have a name");
@@ -10,35 +9,22 @@ AST::Module Parser::handle_module() {
   assertion(peek().type == TOK_SEMICOLON, "missing ';'");
   move_cursor();
 
-  auto result = take_with(&Parser::handle_top_level, false);
-
-  move_cursor();
-  if (current_ind + 1 < tokens.size()) {
-    throw_exception(fmt::format("failed to parse entire file. exception stack:\n{}", fmt::join(exception_stack, "\n")));
+  std::vector<AST::TopLevelPtr> result{};
+  while (!is_end()) {
+    result.push_back(handle_top_level());
+    move_cursor();
   }
-  break_excstack();
   return AST::Module(name, std::move(result));
 }
 
 AST::TopLevelPtr Parser::handle_top_level() {
-  set_excstack_breakpoint();
-  AST::TopLevelPtr result;
-  size_t old_ind = current_ind;
-  try {
-    result = handle_fn_decl();
-    break_excstack();
-    return result; 
-  } catch (parser_exception& e) {
-    current_ind = old_ind;
-  }
-  try {
-    result = handle_extern_fn();
-    break_excstack();
-    return result; 
-  } catch (parser_exception& e) {
-    throw_exception("failed to parse top level");
-    return nullptr;
-  }
+  if (peek().type == TOK_FN) {
+    return handle_fn_decl();
+  } 
+  if (peek().type == TOK_EXTERN) {
+    return handle_extern_fn();
+  } 
+  throw_exception("failed to parse top level");
 }
 
 AST::FnProto Parser::handle_fn_proto() {
@@ -49,9 +35,16 @@ AST::FnProto Parser::handle_fn_proto() {
   move_cursor();
   assertion(peek().type == TOK_LEFT_PAREN, "function prototype parameters missing left parenthesis");
   move_cursor();
-  auto params = take_with(&Parser::handle_vd);
+  std::vector<AST::VarDecl> params;
+
+  while(!is_end() && peek().type != TOK_RIGHT_PAREN) {
+    params.push_back(handle_vd());
+    move_cursor();
+  }
+
   assertion(peek().type == TOK_RIGHT_PAREN, "function prototype parameters missing right parenthesis");
   move_cursor();
+  // TODO: make return type optional
   assertion(peek().type == TOK_IDENTIFIER, "function prototype must have a return type");
   auto return_type = peek();
   return AST::FnProto(
@@ -83,8 +76,11 @@ AST::Scope Parser::handle_scope() {
   assertion(peek().type == TOK_LEFT_CURLY, "scope must start with a left curly brace");
   move_cursor();
   
-  auto statements = take_with(
-      &Parser::handle_statement, false);
+  std::vector<AST::StatementPtr> statements{};
+  while (!is_end() && peek().type != TOK_RIGHT_CURLY) {
+      statements.push_back(handle_statement());
+      move_cursor();
+  }
 
   assertion(peek().type == TOK_RIGHT_CURLY, "scope must end with a right curly brace");
   return AST::Scope(
@@ -92,45 +88,31 @@ AST::Scope Parser::handle_scope() {
 }
 
 AST::StatementPtr Parser::handle_statement() {
-  set_excstack_breakpoint();
   AST::StatementPtr result;
-  size_t old_ind = current_ind;
-  try {
+  if (peek().type == TOK_VAR) {
     result = std::make_unique<AST::Statement>(handle_vd());
     move_cursor();
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
-    break_excstack();
     return result; 
-  } catch (parser_exception& e) {
-    current_ind = old_ind;
   } 
-  try {
-    auto expr = handle_expr();
-    result = AST::StatExpr::make(std::forward<AST::ExpressionPtr>(expr));
-    move_cursor();
-    assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
-    break_excstack();
-    return result; 
-  } catch (parser_exception& e) {
-    current_ind = old_ind;
-  }
-  try {
+
+  if (peek().type == TOK_RETURN) {
     result = handle_return();
     move_cursor();
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
-    break_excstack();
     return result; 
-  } catch (parser_exception& e) {
-    current_ind = old_ind;
   }
-  try {
+
+  if (peek().type == TOK_IF) {
     result = handle_conditional();
-    break_excstack();
-    return result; 
-  } catch (parser_exception& e) {
-    throw_exception("failed to parse statement");
-    return nullptr;
+    return result;
   }
+
+  auto expr = handle_expr();
+  result = AST::StatExpr::make(std::forward<AST::ExpressionPtr>(expr));
+  move_cursor();
+  assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+  return result; 
 }
 
 AST::StatementPtr Parser::handle_conditional() {
@@ -309,7 +291,12 @@ AST::ExpressionPtr Parser::primary() {
   if (tok.type == TOK_IDENTIFIER) {
     if (peek(1).type == TOK_LEFT_PAREN) {
       move_cursor(2); // Skipping over parenthesis
-      auto args = take_with(&Parser::handle_expr);
+      std::vector<AST::ExpressionPtr> args{};
+      // TODO: Add comma as separators
+      while (!is_end(), peek().type != TOK_RIGHT_PAREN) {
+        args.push_back(handle_expr());
+        move_cursor();
+      }
       assertion(peek().type == TOK_RIGHT_PAREN, "missing right parenthesis");
       return AST::FnCall::make(
           tok,

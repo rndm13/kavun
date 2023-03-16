@@ -27,7 +27,6 @@ class Parser {
   size_t current_ind;
 
   std::vector<std::string> exception_stack;
-  std::stack<std::size_t>  exc_stack_breakpoints;
 
   void move_cursor(size_t to_move = 1) {
     current_ind += to_move;
@@ -40,52 +39,7 @@ class Parser {
     return tokens.at(std::min(current_ind + offset, tokens.size() - 1));
   }
   
-  template<typename Predicate>
-  std::vector<Token> take_while(Predicate&& pred) {
-    std::vector<Token> result{};
-    while (pred(peek())) {
-      result.push_back(peek());
-      move_cursor();
-    }
-    return result;
-  }
-
-  template<typename ReturnType>
-  std::vector<ReturnType> take_with(ReturnType (Parser::*member_func)(), bool clear_excstack = true) {
-    if (clear_excstack)
-      set_excstack_breakpoint();
-    std::vector<ReturnType> result{};
-    size_t old_ind = current_ind;
-    while (!is_end()) {
-      try {
-        result.push_back((this ->* member_func)());
-        move_cursor(); // move to next
-        old_ind = current_ind;
-      } catch (parser_exception& e) {
-        current_ind = old_ind;
-        break;
-      }
-    }
-    if (clear_excstack)
-      break_excstack();
-    return result;
-  }  
-
-  void set_excstack_breakpoint() {
-    exc_stack_breakpoints.push(exception_stack.size());
-  }
-  
-  void break_excstack() {
-    if (exc_stack_breakpoints.empty()) 
-      return;
-
-    exception_stack.resize(exc_stack_breakpoints.top());
-    exc_stack_breakpoints.pop();
-  }
-
   void throw_exception(const std::string& in) {
-    parser_exception e(peek(), in);
-    exception_stack.push_back(e.what());
     throw parser_exception(peek(), in);
   }
 
