@@ -37,8 +37,14 @@ AST::FnProto Parser::handle_fn_proto() {
   move_cursor();
   std::vector<AST::VarDecl> params;
 
-  while(!is_end() && peek().type != TOK_RIGHT_PAREN) {
+  while(!is_end()) {
+    if (peek().type == TOK_RIGHT_PAREN)
+      break;
     params.push_back(handle_vd());
+    move_cursor();
+    if (peek().type == TOK_RIGHT_PAREN)
+      break;
+    assertion(peek().type == TOK_COMMA, "missing comma");
     move_cursor();
   }
 
@@ -293,8 +299,16 @@ AST::ExpressionPtr Parser::primary() {
       move_cursor(2); // Skipping over parenthesis
       std::vector<AST::ExpressionPtr> args{};
       // TODO: Add comma as separators
-      while (!is_end() && peek().type != TOK_RIGHT_PAREN) {
+      while (!is_end()) {
+        if (peek().type == TOK_RIGHT_PAREN)
+          break;
+
         args.push_back(handle_expr());
+        move_cursor();
+
+        if (peek().type == TOK_RIGHT_PAREN)
+          break;
+        assertion(peek().type == TOK_COMMA, "missing comma");
         move_cursor();
       }
       assertion(peek().type == TOK_RIGHT_PAREN, "missing right parenthesis");

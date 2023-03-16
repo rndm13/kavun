@@ -1,6 +1,6 @@
 module rand;
 
-extern fn printf(var string text var i32 num) void;
+extern fn printf(var string text, var i32 num) void;
 extern fn rand() i32;
 extern fn srand(var i32 seed) void;
 extern fn time(var i32 num) i32;
@@ -8,6 +8,6 @@ extern fn time(var i32 num) i32;
 fn main() void {
   srand(time(0));
   var i32 num = rand();
-  printf("%d\n" num);
+  printf("%d\n", num);
   return;
 }

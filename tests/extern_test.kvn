@@ -1,8 +1,8 @@
 module extern_test;
 
-extern fn printf(var string format var i32 num) void;
+extern fn printf(var string format, var i32 num) void;
 
 fn main() void {
-  printf("%d" 20);
+  printf("%d", 20);
   return;
 }

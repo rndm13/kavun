@@ -1,0 +1,9 @@
+module fail;
+
+fn func(var i32 a var i32 b) i32 {
+  return a + b;
+}
+
+fn main() void {
+  return;
+}

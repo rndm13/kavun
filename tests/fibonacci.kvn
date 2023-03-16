@@ -1,6 +1,6 @@
 module fibonacci;
 
-extern fn printf(var string t var i32 n1) void;
+extern fn printf(var string t, var i32 n1) void;
 
 fn fib(var i32 input) i32 {
   if input <= 1 {
@@ -9,16 +9,16 @@ fn fib(var i32 input) i32 {
   return fib(input - 2) + fib(input - 1);
 }
 
-fn loop(var i32 cur var i32 max) void {
+fn loop(var i32 cur, var i32 max) void {
   if cur >= max {
     return;
   }
-  printf("%d\n" fib(cur));
-  loop(cur + 1 max);
+  printf("%d\n", fib(cur));
+  loop(cur + 1, max);
   return;
 }
 
 fn main() void {
-  loop(0 10);
+  loop(0, 10);
   return;
 }

@@ -24,6 +24,7 @@ enum TokenType {
   TOK_STAR,
   TOK_MODULO,
   TOK_SEMICOLON,
+  TOK_COMMA,
   TOK_DOT,
   TOK_BANG,
   TOK_BANG_EQUAL,

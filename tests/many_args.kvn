@@ -1,10 +1,9 @@
 module args;
 
-fn sum(var i32 a
-       var i32 b) i32 {
+fn sum(var i32 a, var i32 b,) i32 {
   return a + b;
 }
 
 fn main() i32 {
-  return sum(0 4);
+  return sum(0, 4,);
 }
