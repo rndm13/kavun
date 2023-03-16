@@ -293,7 +293,7 @@ AST::ExpressionPtr Parser::primary() {
       move_cursor(2); // Skipping over parenthesis
       std::vector<AST::ExpressionPtr> args{};
       // TODO: Add comma as separators
-      while (!is_end(), peek().type != TOK_RIGHT_PAREN) {
+      while (!is_end() && peek().type != TOK_RIGHT_PAREN) {
         args.push_back(handle_expr());
         move_cursor();
       }
