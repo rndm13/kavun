@@ -60,14 +60,18 @@ AST::FnProto Parser::handle_fn_proto() {
   }
 
   assertion(peek().type == TOK_RIGHT_PAREN, "function prototype parameters missing right parenthesis");
-  move_cursor();
-  // TODO: make return type optional
-  assertion(peek().type == TOK_IDENTIFIER, "function prototype must have a return type");
-  auto return_type = peek();
+  if (peek(1).type == TOK_IDENTIFIER) {
+    move_cursor();
+    auto return_type = peek();
+    return AST::FnProto(
+        identifier, 
+        std::forward<std::vector<AST::ParamDecl>>(params),
+        return_type); 
+  }
   return AST::FnProto(
       identifier, 
-      std::forward<std::vector<AST::ParamDecl>>(params),
-      return_type); 
+      std::forward<std::vector<AST::ParamDecl>>(params), 
+      std::nullopt);
 }
 
 AST::TopLevelPtr Parser::handle_extern_fn() {

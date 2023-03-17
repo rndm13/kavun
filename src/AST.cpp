@@ -5,7 +5,7 @@ namespace AST {
 ParamDecl::ParamDecl(const Token& _type, const std::optional<Token>& _id) 
   : type(_type), id(_id) { }
 
-FnProto::FnProto(const Token& _id, std::vector<ParamDecl>&& _params, const Token& _return_type) 
+FnProto::FnProto(const Token& _id, std::vector<ParamDecl>&& _params, const std::optional<Token>& _return_type) 
   : id (_id), return_type(_return_type) {
   for (auto& param : _params) {
     parameters.emplace_back(std::move(param));

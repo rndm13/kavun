@@ -55,9 +55,9 @@ using ExpressionPtr = std::unique_ptr<Expression>;
 struct FnProto {
   Token id;
   std::vector<ParamDecl> parameters;
-  Token return_type;
+  std::optional<Token> return_type;
 
-  FnProto(const Token& _id, std::vector<ParamDecl>&& _params, const Token& _return_type);
+  FnProto(const Token& _id, std::vector<ParamDecl>&& _params, const std::optional<Token>& _return_type);
 };
 
 struct Scope {

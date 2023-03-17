@@ -127,7 +127,12 @@ llvm::Function* CodeGenerator::operator()(
     parameter_types.push_back(get_type(param.type));
 
   // return type
-  llvm::Type* rt = get_type(proto.return_type);
+  llvm::Type* rt;
+  if (proto.return_type) {
+    rt = get_type(proto.return_type.value());
+  } else {
+    rt = llvm::Type::getVoidTy(*the_context);
+  }
 
   // function signature
   llvm::FunctionType* func_type = 
@@ -175,6 +180,7 @@ llvm::BasicBlock* CodeGenerator::operator()(
 void CodeGenerator::operator()(const AST::Extern& ext) { 
   operator()(ext.proto);
 }
+
 void CodeGenerator::operator()(const AST::FnDecl& decl) { 
   auto func = operator()(decl.proto);
 
