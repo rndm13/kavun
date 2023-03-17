@@ -32,12 +32,14 @@ create_test_sourcelist (Tests
   valid_program2.kvn
   valid_program3.kvn
   var_decl.kvn
+  assignment.kvn
   lexer_fail_no_end_string.kvn
   lexer_fail_inv_char.kvn
   lexer_fail_2_points.kvn
   parser_fail_expression.kvn
   parser_fail_no_comma_fn.kvn
   parser_fail_fn_decl.kvn
+  parser_fail_assignment.kvn
   codegen_fail_void_return.kvn
   codegen_fail_unknown_function.kvn
   codegen_fail_function_as_var.kvn

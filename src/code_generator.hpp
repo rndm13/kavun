@@ -49,6 +49,7 @@ public:
   bool terminated;
 
   void add_variable(const Token&, llvm::Type*, llvm::Value*);
+  void assign_variable(const Token&, llvm::Value*);
   bool check_variable(const Token&) const;
   const VariableData& get_variable(const Token&) const;
 };
@@ -62,6 +63,7 @@ class ScopeStack {
   void pop_scope();
 
   void add_variable(const Token&, llvm::Type*, llvm::Value*);
+  void assign_variable(const Token&, llvm::Value*);
   bool check_variable(const Token&) const;
   const VariableData& get_variable(const Token&) const;
 };

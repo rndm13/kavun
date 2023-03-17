@@ -67,6 +67,27 @@ const VariableData& ScopeStack::get_variable(const Token& name) const {
   throw interpreter_exception(name, "no such variable");
 }
 
+void ScopeData::assign_variable(const Token& name, llvm::Value* val) {
+  if (!check_variable(name))
+    throw interpreter_exception(name, "cannot assign value to unknown variable");
+  auto var = get_variable(name);
+  if (var.type != val -> getType())
+    throw interpreter_exception(name, "cannot assign value to a variable with different type");
+  var.value = val;
+
+  variables.at(name.lexeme) = var;
+}
+
+void ScopeStack::assign_variable(const Token& name, llvm::Value* val) {
+  for (auto& scope : data) {
+    if (scope.check_variable(name)) {
+      scope.assign_variable(name, val);
+      return;
+    }
+  }
+  throw interpreter_exception(name, "cannot assign value to unknown variable");
+}
+
 llvm::Function* CodeGenerator::get_function(Token identifier) {
   auto result = the_module -> getFunction(identifier.lexeme);
   if (result)
@@ -167,7 +188,7 @@ void CodeGenerator::operator()(const AST::FnDecl& decl) {
         func -> getArg(i));
   }
 
-  auto scope = operator()(decl.body, "function_entry", func);
+  [[maybe_unused]] auto scope = operator()(decl.body, "function_entry", func);
 
   scope_stack.pop_scope(); // read above todo
   if (!the_builder -> GetInsertBlock() -> getTerminator()) {
@@ -248,6 +269,9 @@ void CodeGenerator::operator()(const AST::Return& ret) {
 }
 
 void CodeGenerator::operator()(const AST::VarDecl& var_decl) {
+  if (scope_stack.check_variable(var_decl.id))
+    throw interpreter_exception(var_decl.id, "redefinition of a variable");
+
   scope_stack.add_variable(
     var_decl.id, 
     get_type(var_decl.type),
@@ -342,6 +366,14 @@ llvm::Value* CodeGenerator::binOpBoolean(
 
 // Expression
 llvm::Value* CodeGenerator::operator()(const AST::BinOperator& bin_op) { 
+  if (bin_op.op.type == TOK_EQUAL) {
+    auto var = std::get<AST::Variable>(*bin_op.lhs); // is always variable
+                                                     // asserted by parser
+    llvm::Value* rhs_eval = operator()(bin_op.rhs);
+    scope_stack.assign_variable(var.id, rhs_eval);
+    return operator()(bin_op.lhs);
+  }
+
   llvm::Value* lhs_eval = operator()(bin_op.lhs);
   llvm::Value* rhs_eval = operator()(bin_op.rhs);
   if (!lhs_eval || !rhs_eval) {
@@ -460,7 +492,7 @@ void CodeGenerator::operator()(const AST::Module& mod) {
 //   if (llvm::verifyModule(*the_module), &llvm::outs()) {
 //     throw std::runtime_error("LLVM verification error");
 //   }
-  optimize_module();
+//   optimize_module();
 }
 
 CodeGenerator::CodeGenerator() {
