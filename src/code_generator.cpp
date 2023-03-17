@@ -256,6 +256,51 @@ void CodeGenerator::operator()(const AST::Conditional& cond) {
   the_builder -> SetInsertPoint(after_block);
 }
 
+void CodeGenerator::operator()(const AST::ForLoop& fl) {
+  if (fl.variable)
+    operator()(fl.variable.value());
+
+  auto orig_block = the_builder -> GetInsertBlock();
+  auto orig_point = the_builder -> GetInsertPoint();
+  
+  auto parent_fn  = orig_block -> getParent();
+
+  auto loop_block = operator()(fl.body, "loop_block", parent_fn);
+
+  the_builder -> SetInsertPoint(orig_block, orig_point);
+
+  if (fl.condition) {
+    llvm::BasicBlock* after_block =
+      llvm::BasicBlock::Create(
+          *the_context,
+          "after_block");
+
+    after_block -> insertInto(parent_fn);
+
+    the_builder -> CreateCondBr(
+        operator()(fl.condition.value()), loop_block, after_block);
+
+    the_builder -> SetInsertPoint(loop_block);
+
+    if (fl.iteration)
+      operator()(fl.iteration.value());
+
+    the_builder -> CreateCondBr(
+        operator()(fl.condition.value()), loop_block, after_block);
+
+    the_builder -> SetInsertPoint(after_block);
+    return;
+  }
+  the_builder -> CreateBr(loop_block);
+
+  the_builder -> SetInsertPoint(loop_block);
+
+  if (fl.iteration)
+    operator()(fl.iteration.value());
+
+  the_builder -> CreateBr(loop_block);
+}
+
 void CodeGenerator::operator()(const AST::StatExpr& stat_expr) {
   operator()(stat_expr.expr);
   // TODO: Warn if unused expression

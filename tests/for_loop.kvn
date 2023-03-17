@@ -1,0 +1,14 @@
+module fl;
+
+extern fn printf(string, i32) void;
+
+fn main() void {
+  for var i32 i = 0; i < 100; i = i + 1 {
+    printf("%d\n", i);
+  }
+  return;
+
+  for ;; {
+    printf("Hello!\n", 0);
+  }
+}

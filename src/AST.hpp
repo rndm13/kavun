@@ -27,6 +27,7 @@ struct FnDecl;
 
 // Statements
 struct Conditional;
+struct ForLoop;
 struct StatExpr;
 struct Return;
 struct VarDecl;
@@ -44,7 +45,7 @@ using TopLevel = std::variant
 using TopLevelPtr = std::unique_ptr<TopLevel>;
 
 using Statement = std::variant
-  <Conditional, StatExpr, Return, VarDecl>;
+  <Conditional, ForLoop, StatExpr, Return, VarDecl>;
 using StatementPtr = std::unique_ptr<Statement>;
   
 using Expression = std::variant
@@ -167,6 +168,25 @@ struct Conditional {
       ExpressionPtr&& _cond,
       Scope&& _if,
       std::optional<Scope>&& _else = std::nullopt);
+};
+
+struct ForLoop {
+  std::optional<StatementPtr>  variable;
+  std::optional<ExpressionPtr> condition;
+  std::optional<ExpressionPtr> iteration;
+
+  Scope body;
+
+  ForLoop(Scope&&,
+          std::optional<StatementPtr>&&  = std::nullopt,
+          std::optional<ExpressionPtr>&& = std::nullopt,
+          std::optional<ExpressionPtr>&& = std::nullopt);
+
+  static StatementPtr make(
+      Scope&&,
+      std::optional<StatementPtr>&&  = std::nullopt,
+      std::optional<ExpressionPtr>&& = std::nullopt,
+      std::optional<ExpressionPtr>&& = std::nullopt);
 };
 
 struct Module {

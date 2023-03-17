@@ -153,6 +153,30 @@ StatementPtr Conditional::make(
       std::forward<std::optional<Scope>>(_else)));
 }
 
+ForLoop::ForLoop(
+    Scope&& _body,
+    std::optional<StatementPtr>&&  _var,
+    std::optional<ExpressionPtr>&& _cond,
+    std::optional<ExpressionPtr>&& _iter) 
+  : variable(std::forward<std::optional<StatementPtr>>(_var)),
+    condition(std::forward<std::optional<ExpressionPtr>>(_cond)),
+    iteration(std::forward<std::optional<ExpressionPtr>>(_iter)),
+    body(std::forward<Scope>(_body)) { }
+
+StatementPtr ForLoop::make(
+    Scope&& _body,
+    std::optional<StatementPtr>&&  _var,
+    std::optional<ExpressionPtr>&& _cond,
+    std::optional<ExpressionPtr>&& _iter) {
+  return std::make_unique<Statement>(
+      ForLoop(
+        std::forward<Scope>(_body),
+        std::forward<std::optional<StatementPtr>>(_var),
+        std::forward<std::optional<ExpressionPtr>>(_cond),
+        std::forward<std::optional<ExpressionPtr>>(_iter)));
+}
+
+
 Module::Module(const Token& _name, std::vector<TopLevelPtr>&& funcs) 
   : name(_name), functions(funcs.size()) {
   for (size_t ind = 0; ind < funcs.size(); ++ind) {

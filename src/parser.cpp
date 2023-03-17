@@ -6,7 +6,7 @@ AST::Module Parser::handle_module() {
   assertion(peek().type == TOK_IDENTIFIER, "module must have a name");
   auto name = peek();
   move_cursor();
-  assertion(peek().type == TOK_SEMICOLON, "missing ';'");
+  assertion(peek().type == TOK_SEMICOLON, "missing semicolon");
   move_cursor();
 
   std::vector<AST::TopLevelPtr> result{};
@@ -107,7 +107,7 @@ AST::Scope Parser::handle_scope() {
 AST::StatementPtr Parser::handle_statement() {
   AST::StatementPtr result;
   if (peek().type == TOK_VAR) {
-    result = std::make_unique<AST::Statement>(handle_vd());
+    result = handle_vd();
     move_cursor();
     assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
     return result; 
@@ -122,6 +122,11 @@ AST::StatementPtr Parser::handle_statement() {
 
   if (peek().type == TOK_IF) {
     result = handle_conditional();
+    return result;
+  }
+
+  if (peek().type == TOK_FOR) {
+    result = handle_for();
     return result;
   }
 
@@ -151,6 +156,40 @@ AST::StatementPtr Parser::handle_conditional() {
       std::forward<std::optional<AST::Scope>>(else_body));
 }
 
+AST::StatementPtr Parser::handle_for() {
+  assertion(peek().type == TOK_FOR, "for loop must start with for");
+  move_cursor();
+  std::optional<AST::StatementPtr> var_decl;
+  std::optional<AST::ExpressionPtr> cond;
+  std::optional<AST::ExpressionPtr> iter;
+
+  if (peek().type != TOK_SEMICOLON) {
+    var_decl = handle_vd();
+    move_cursor();
+  }
+  assertion(peek().type == TOK_SEMICOLON, "missing semicolon");
+  move_cursor();
+
+  if (peek().type != TOK_SEMICOLON) {
+    cond = handle_expr();
+    move_cursor();
+  }
+  assertion(peek().type == TOK_SEMICOLON, "missing semicolon");
+  move_cursor();
+
+  if (peek().type != TOK_LEFT_CURLY) {
+    iter = handle_expr();
+    move_cursor();
+  }
+
+  auto body = handle_scope();
+  return AST::ForLoop::make(
+      std::forward<AST::Scope>(body), 
+      std::forward<std::optional<AST::StatementPtr>>(var_decl), 
+      std::forward<std::optional<AST::ExpressionPtr>>(cond), 
+      std::forward<std::optional<AST::ExpressionPtr>>(iter));
+}
+
 AST::StatementPtr Parser::handle_return() {
   assertion(peek().type == TOK_RETURN, "return must start with 'return'");
   if (peek(1).type == TOK_SEMICOLON)
@@ -160,7 +199,7 @@ AST::StatementPtr Parser::handle_return() {
   return AST::Return::make(std::forward<AST::ExpressionPtr>(expr));
 }
 
-AST::VarDecl Parser::handle_vd() {
+AST::StatementPtr Parser::handle_vd() {
   assertion(peek().type == TOK_VAR, "variable declaration must start with 'var'");
   move_cursor();
   assertion(peek().type == TOK_IDENTIFIER, "variable declaration must have a type");
@@ -172,7 +211,7 @@ AST::VarDecl Parser::handle_vd() {
   assertion(peek().type == TOK_EQUAL, "variable is uninitialized");
   move_cursor(); 
   auto expr = handle_expr();
-  return AST::VarDecl(
+  return AST::VarDecl::make(
       type,
       id, 
       std::forward<AST::ExpressionPtr>(expr));
@@ -351,7 +390,7 @@ AST::ExpressionPtr Parser::primary() noexcept {
         std::forward<std::vector<AST::ExpressionPtr>>(args));
   }
   if (tok.type == TOK_LEFT_PAREN) {
-  move_cursor();
+    move_cursor();
     auto expr = handle_expr();
     move_cursor();
     assertion(peek().type == TOK_RIGHT_PAREN, "missing right parenthesis");

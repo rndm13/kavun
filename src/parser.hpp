@@ -55,9 +55,10 @@ class Parser {
   AST::Scope         handle_scope(); 
   AST::StatementPtr  handle_statement(); 
   AST::StatementPtr  handle_return(); 
-  AST::VarDecl       handle_vd();
+  AST::StatementPtr  handle_vd();
   AST::Module        handle_module();
   AST::StatementPtr  handle_conditional();
+  AST::StatementPtr  handle_for();
   AST::ExpressionPtr handle_expr();
 
   // Expressions:

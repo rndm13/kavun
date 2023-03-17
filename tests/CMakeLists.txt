@@ -17,6 +17,7 @@ create_test_sourcelist (Tests
   extern_test.kvn
   double_literal.kvn
   factorial.kvn
+  for_loop.kvn
   fibonacci.kvn
   fizzbuzz.kvn
   hello_world.kvn

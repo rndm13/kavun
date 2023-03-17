@@ -104,6 +104,7 @@ public:
 
   // Statements
   void operator()(const AST::Conditional&);
+  void operator()(const AST::ForLoop&);
   void operator()(const AST::StatExpr&);
   void operator()(const AST::Return&);
   void operator()(const AST::VarDecl&);
