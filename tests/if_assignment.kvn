@@ -1,0 +1,15 @@
+module sas;
+
+extern fn printf(string) void;
+
+fn main() void {
+  var string str = "";
+  if 5 % 2 == 0 {
+    str = "5 is divisible by 2";
+  } else {
+    str = "5 is not divisible by 2";
+  }
+  printf(str);
+  printf("\n");
+  return;
+}

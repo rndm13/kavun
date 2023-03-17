@@ -13,11 +13,11 @@ const char* interpreter_exception::what() {
   return info.c_str();
 } 
  
-void ScopeData::add_variable(const Token& tok, llvm::Type* type, llvm::Value* value) {
+void ScopeData::add_variable(const Token& tok, llvm::Type* type, llvm::Value* value, bool is_reference) {
   variables.insert(
       std::make_pair(
         tok.lexeme,
-        VariableData{type, value}));
+        VariableData{type, value, is_reference}));
 }
 
 bool ScopeData::check_variable(const Token& tok) const {
@@ -51,12 +51,13 @@ bool ScopeStack::check_variable(const Token& name) const {
 void ScopeStack::add_variable(
     const Token& name, 
     llvm::Type*  type,
-    llvm::Value* value) {
+    llvm::Value* value,
+    bool is_reference) {
   if (data.empty()) {
     // TODO: probably make a global constant
     throw std::runtime_error("cannot add variable with empty stack"); 
   }
-  data.back().add_variable(name, type, value);
+  data.back().add_variable(name, type, value, is_reference);
 }
 
 const VariableData& ScopeStack::get_variable(const Token& name) const {
@@ -185,7 +186,8 @@ void CodeGenerator::operator()(const AST::FnDecl& decl) {
     scope_stack.add_variable(
         decl.proto.parameters[i].id.value(), 
         func -> getFunctionType() -> getParamType(i),
-        func -> getArg(i));
+        func -> getArg(i),
+        false);
   }
 
   [[maybe_unused]] auto scope = operator()(decl.body, "function_entry", func);
@@ -272,11 +274,16 @@ void CodeGenerator::operator()(const AST::VarDecl& var_decl) {
   if (scope_stack.check_variable(var_decl.id))
     throw interpreter_exception(var_decl.id, "redefinition of a variable");
 
+  auto expr_eval = operator()( var_decl.expression);
+  auto type = get_type(var_decl.type);
+  auto alloca = the_builder -> CreateAlloca(type, nullptr, var_decl.id.lexeme);
+  the_builder -> CreateStore(expr_eval, alloca);
+
   scope_stack.add_variable(
     var_decl.id, 
-    get_type(var_decl.type),
-    operator()(
-      var_decl.expression));
+    type,
+    alloca,
+    true);
 }
 
 llvm::Value* CodeGenerator::binOpFloat(
@@ -370,8 +377,13 @@ llvm::Value* CodeGenerator::operator()(const AST::BinOperator& bin_op) {
     auto var = std::get<AST::Variable>(*bin_op.lhs); // is always variable
                                                      // asserted by parser
     llvm::Value* rhs_eval = operator()(bin_op.rhs);
-    scope_stack.assign_variable(var.id, rhs_eval);
-    return operator()(bin_op.lhs);
+    auto data = scope_stack.get_variable(var.id);
+    if (data.is_reference) {
+      the_builder -> CreateStore(rhs_eval, data.value);
+    } else {
+      scope_stack.assign_variable(var.id, rhs_eval);
+    }
+    return rhs_eval;
   }
 
   llvm::Value* lhs_eval = operator()(bin_op.lhs);
@@ -447,7 +459,11 @@ llvm::Value* CodeGenerator::operator()(const AST::Literal& literal) {
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::Variable& var) {
-  return scope_stack.get_variable(var.id).value;
+  auto data = scope_stack.get_variable(var.id);
+  if (data.is_reference) {
+    return the_builder -> CreateLoad(data.type, data.value);
+  }
+  return data.value;
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::Grouping& group) {
@@ -492,7 +508,7 @@ void CodeGenerator::operator()(const AST::Module& mod) {
 //   if (llvm::verifyModule(*the_module), &llvm::outs()) {
 //     throw std::runtime_error("LLVM verification error");
 //   }
-//   optimize_module();
+  optimize_module();
 }
 
 CodeGenerator::CodeGenerator() {

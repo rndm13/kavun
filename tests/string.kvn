@@ -1,10 +1,15 @@
 module string_test;
 
 fn cool_string() string {
-  return "Hello world!";
+  return "Hello world!\n";
 }
 
+extern fn printf(string) void;
+
 fn main() void {
-  cool_string();
+  var string str = "smth\n";
+  printf(str);
+  str = cool_string();
+  printf(str);
   return;
 }

@@ -9,6 +9,8 @@ set (codegen_pass_regex  "INTERPRETER PASS")
 
 # create the testing file and list of tests
 create_test_sourcelist (Tests
+  assignment.kvn
+  if_assignment.kvn
   bool.kvn
   conditional.kvn
   empty_module.kvn
@@ -32,7 +34,6 @@ create_test_sourcelist (Tests
   valid_program2.kvn
   valid_program3.kvn
   var_decl.kvn
-  assignment.kvn
   lexer_fail_no_end_string.kvn
   lexer_fail_inv_char.kvn
   lexer_fail_2_points.kvn

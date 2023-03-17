@@ -41,6 +41,7 @@ struct VariableData {
   llvm::Type*  type;
   llvm::Value* value; // ptr to stack. Use load, alloca and store
   // Possibly make those fields std::unique_ptr?
+  bool is_reference;
 };
 
 class ScopeData {
@@ -48,7 +49,7 @@ class ScopeData {
 public:
   bool terminated;
 
-  void add_variable(const Token&, llvm::Type*, llvm::Value*);
+  void add_variable(const Token&, llvm::Type*, llvm::Value*, bool);
   void assign_variable(const Token&, llvm::Value*);
   bool check_variable(const Token&) const;
   const VariableData& get_variable(const Token&) const;
@@ -62,7 +63,7 @@ class ScopeStack {
   void add_scope();
   void pop_scope();
 
-  void add_variable(const Token&, llvm::Type*, llvm::Value*);
+  void add_variable(const Token&, llvm::Type*, llvm::Value*, bool);
   void assign_variable(const Token&, llvm::Value*);
   bool check_variable(const Token&) const;
   const VariableData& get_variable(const Token&) const;

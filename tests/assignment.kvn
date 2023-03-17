@@ -1,9 +1,16 @@
 module ass;
 
-fn main() void {
+extern fn printf(string, i32) void;
+
+fn main() i32 {
   var i32 a = 5;
+  printf("a = %d\n", a);
   a = a + 2;
+  printf("a = %d\n", a);
   var i32 b = 3;
+  printf("b = %d\n", b);
   a = b = a + b;
+  printf("a = %d\n", a);
+  printf("b = %d\n", b);
   return a;
 }
