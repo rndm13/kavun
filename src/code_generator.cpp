@@ -106,7 +106,8 @@ llvm::Type* CodeGenerator::get_type(Token identifier) {
 }
 
 void CodeGenerator::operator()(const AST::StatementPtr& statement) {
-  std::visit(*this, *statement);
+  if (!the_builder -> GetInsertBlock() -> getTerminator())
+    std::visit(*this, *statement);
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::ExpressionPtr& expression) {

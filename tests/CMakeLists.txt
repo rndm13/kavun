@@ -20,6 +20,7 @@ create_test_sourcelist (Tests
   for_loop.kvn
   fibonacci.kvn
   fizzbuzz.kvn
+  circle.kvn
   hello_world.kvn
   id_func.kvn
   int_return.kvn
