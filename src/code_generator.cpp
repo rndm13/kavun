@@ -242,6 +242,10 @@ void CodeGenerator::operator()(const AST::Conditional& cond) {
     the_builder -> CreateCondBr(cond_eval, if_block, after_block);
   }
 
+  if (if_block -> getTerminator() && else_block && else_block -> getTerminator()) {
+    return;
+  }
+
   if (!if_block -> getTerminator()) {
     the_builder -> SetInsertPoint(if_block);
 
