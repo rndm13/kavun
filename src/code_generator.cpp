@@ -267,6 +267,8 @@ void CodeGenerator::operator()(const AST::ForLoop& fl) {
 
   auto loop_block = operator()(fl.body, "loop_block", parent_fn);
 
+  auto loop_end_block = the_builder -> GetInsertBlock();
+
   the_builder -> SetInsertPoint(orig_block, orig_point);
 
   if (fl.condition) {
@@ -280,7 +282,7 @@ void CodeGenerator::operator()(const AST::ForLoop& fl) {
     the_builder -> CreateCondBr(
         operator()(fl.condition.value()), loop_block, after_block);
 
-    the_builder -> SetInsertPoint(loop_block);
+    the_builder -> SetInsertPoint(loop_end_block);
 
     if (fl.iteration)
       operator()(fl.iteration.value());
@@ -293,7 +295,7 @@ void CodeGenerator::operator()(const AST::ForLoop& fl) {
   }
   the_builder -> CreateBr(loop_block);
 
-  the_builder -> SetInsertPoint(loop_block);
+  the_builder -> SetInsertPoint(loop_end_block);
 
   if (fl.iteration)
     operator()(fl.iteration.value());

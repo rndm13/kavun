@@ -1,0 +1,21 @@
+module circle;
+
+extern fn printf(string) void;
+
+
+fn main() void {
+  for var i32 y = 0; y < 10; y = y + 1 {
+    for var i32 x = 0; x < 10; x = x + 1 {
+      var i32 rx = x - 5;
+      var i32 ry = y - 5;
+      
+      if rx * rx + ry * ry <= 9 {
+        printf("#");
+      } else {
+        printf(" ");
+      }
+    }
+    printf("\n");
+  }
+  return;
+}
