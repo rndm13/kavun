@@ -201,6 +201,10 @@ void CodeGenerator::operator()(const AST::FnDecl& decl) {
 
   scope_stack.pop_scope(); // read above todo
   if (!the_builder -> GetInsertBlock() -> getTerminator()) {
+    if (func -> getReturnType() -> isVoidTy()) {
+      the_builder -> CreateRetVoid();
+      return;
+    }
     throw interpreter_exception(decl.proto.id, "function is not terminated (not all codepaths return a value)");
   } 
 }

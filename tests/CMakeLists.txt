@@ -31,6 +31,7 @@ create_test_sourcelist (Tests
   ret_main.kvn
   simple_cond.kvn
   string.kvn
+  no_ret_void.kvn
   unary_operator.kvn
   valid_program1.kvn
   valid_program2.kvn

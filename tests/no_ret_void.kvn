@@ -1,0 +1,7 @@
+module void;
+
+extern fn printf(string);
+
+fn main() {
+  printf("Hello world!\n");
+}
