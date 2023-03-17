@@ -1,0 +1,5 @@
+module ass;
+
+fn main() void {
+  return 3 = 2;
+}

@@ -1,0 +1,9 @@
+module ass;
+
+fn main() void {
+  var i32 a = 5;
+  a = a + 2;
+  var i32 b = 3;
+  a = b = a + b;
+  return a;
+}

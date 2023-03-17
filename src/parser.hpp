@@ -61,14 +61,15 @@ class Parser {
   AST::ExpressionPtr handle_expr();
 
   // Expressions:
-  AST::ExpressionPtr primary();
-  AST::ExpressionPtr unary();
-  AST::ExpressionPtr factor();
-  AST::ExpressionPtr term();
-  AST::ExpressionPtr comparison();
-  AST::ExpressionPtr equality();
-  AST::ExpressionPtr conjunction();
-  AST::ExpressionPtr disjunction();
+  AST::ExpressionPtr primary() noexcept;
+  AST::ExpressionPtr unary() noexcept;
+  AST::ExpressionPtr factor() noexcept;
+  AST::ExpressionPtr term() noexcept;
+  AST::ExpressionPtr comparison() noexcept;
+  AST::ExpressionPtr equality() noexcept;
+  AST::ExpressionPtr conjunction() noexcept;
+  AST::ExpressionPtr disjunction() noexcept;
+  AST::ExpressionPtr assignment() noexcept;
   
   bool match(std::vector<TokenType>, int to_peek = 1);
 

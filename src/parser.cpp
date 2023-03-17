@@ -189,14 +189,34 @@ bool Parser::match(std::vector<TokenType> to_match, int to_peek) {
 }
 
 AST::ExpressionPtr Parser::handle_expr() {
-  return disjunction();
+  auto result = assignment();
+  if (result)
+    return result;
+
+  throw_exception("failed to parse expression");
 }
 
-AST::ExpressionPtr Parser::disjunction() {
+AST::ExpressionPtr Parser::assignment() noexcept {
+  auto expr = disjunction();
+  if (match({TOK_EQUAL})) { 
+    if (!std::holds_alternative<AST::Variable>(*expr))
+      return nullptr;
+    auto op = peek();
+    move_cursor();
+    auto right = assignment(); // makes this be read from right to left
+    expr = AST::BinOperator::make(
+        std::forward<AST::ExpressionPtr>(expr),
+        op,
+        std::forward<AST::ExpressionPtr>(right));
+  }
+  return expr;
+}
+
+AST::ExpressionPtr Parser::disjunction() noexcept {
   auto expr = conjunction();
 
   while (match({TOK_OR})) {
-    auto op = peek(0);
+    auto op = peek();
     move_cursor();
     auto right = conjunction();
     expr = AST::BinOperator::make(
@@ -208,7 +228,7 @@ AST::ExpressionPtr Parser::disjunction() {
   return expr;
 }
 
-AST::ExpressionPtr Parser::conjunction() {
+AST::ExpressionPtr Parser::conjunction() noexcept {
   auto expr = equality();
 
   while (match({TOK_AND})) {
@@ -224,7 +244,7 @@ AST::ExpressionPtr Parser::conjunction() {
   return expr;
 }
 
-AST::ExpressionPtr Parser::equality() {
+AST::ExpressionPtr Parser::equality() noexcept {
   auto expr = comparison();
 
   while (match({TOK_EQUAL_EQUAL, TOK_BANG_EQUAL})) {
@@ -240,7 +260,7 @@ AST::ExpressionPtr Parser::equality() {
   return expr;
 }
 
-AST::ExpressionPtr Parser::comparison() {
+AST::ExpressionPtr Parser::comparison() noexcept {
   auto expr = term();
 
   while (match({TOK_LESS, TOK_LESS_EQUAL, TOK_GREATER, TOK_GREATER_EQUAL})) {
@@ -256,7 +276,7 @@ AST::ExpressionPtr Parser::comparison() {
   return expr;
 }
 
-AST::ExpressionPtr Parser::term() {
+AST::ExpressionPtr Parser::term() noexcept {
   auto expr = factor();
 
   while (match({TOK_PLUS, TOK_MINUS})) {
@@ -272,7 +292,7 @@ AST::ExpressionPtr Parser::term() {
   return expr;
 }
 
-AST::ExpressionPtr Parser::factor() {
+AST::ExpressionPtr Parser::factor() noexcept {
   auto expr = unary();
 
   while (match({TOK_MODULO, TOK_STAR, TOK_SLASH})) {
@@ -288,7 +308,7 @@ AST::ExpressionPtr Parser::factor() {
   return expr;
 }
 
-AST::ExpressionPtr Parser::unary() {
+AST::ExpressionPtr Parser::unary() noexcept {
   if (match({TOK_MINUS, TOK_BANG}, 0)) {
     auto op = peek(-1);
     auto right = unary();
@@ -299,7 +319,7 @@ AST::ExpressionPtr Parser::unary() {
   return primary();
 }
 
-AST::ExpressionPtr Parser::primary() {
+AST::ExpressionPtr Parser::primary() noexcept {
   auto tok = peek();
   if (tok.type == TOK_NUMBER ||
       tok.type == TOK_STRING || 
@@ -308,37 +328,35 @@ AST::ExpressionPtr Parser::primary() {
   }
 
   if (tok.type == TOK_IDENTIFIER) {
-    if (peek(1).type == TOK_LEFT_PAREN) {
-      move_cursor(2); // Skipping over parenthesis
-      std::vector<AST::ExpressionPtr> args{};
-      // TODO: Add comma as separators
-      while (!is_end()) {
-        if (peek().type == TOK_RIGHT_PAREN)
-          break;
+    if (peek(1).type != TOK_LEFT_PAREN)
+      return AST::Variable::make(tok);
+    move_cursor(2); // Skipping over parenthesis
+    std::vector<AST::ExpressionPtr> args{};
+    // TODO: Add comma as separators
+    while (!is_end()) {
+      if (peek().type == TOK_RIGHT_PAREN)
+        break;
 
-        args.push_back(handle_expr());
-        move_cursor();
+      args.push_back(handle_expr());
+      move_cursor();
 
-        if (peek().type == TOK_RIGHT_PAREN)
-          break;
-        assertion(peek().type == TOK_COMMA, "missing comma");
-        move_cursor();
-      }
-      assertion(peek().type == TOK_RIGHT_PAREN, "missing right parenthesis");
-      return AST::FnCall::make(
-          tok,
-          std::forward<std::vector<AST::ExpressionPtr>>(args));
+      if (peek().type == TOK_RIGHT_PAREN)
+        break;
+      assertion(peek().type == TOK_COMMA, "missing comma");
+      move_cursor();
     }
-    return AST::Variable::make(tok);
+    assertion(peek().type == TOK_RIGHT_PAREN, "missing right parenthesis");
+    return AST::FnCall::make(
+        tok,
+        std::forward<std::vector<AST::ExpressionPtr>>(args));
   }
   if (tok.type == TOK_LEFT_PAREN) {
-    move_cursor();
+  move_cursor();
     auto expr = handle_expr();
     move_cursor();
     assertion(peek().type == TOK_RIGHT_PAREN, "missing right parenthesis");
     return AST::Grouping::make(
         std::forward<AST::ExpressionPtr>(expr));
   }
-  throw_exception("failed to parse expression");
   return nullptr;
 }
