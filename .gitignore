@@ -14,3 +14,5 @@ cmake-build-Release
 *.swp
 kavun
 *.ll
+.cache 
+build
