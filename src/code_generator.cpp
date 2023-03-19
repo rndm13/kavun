@@ -16,9 +16,7 @@ const char* interpreter_exception::what() {
 void ScopeData::add_variable(const Token& tok, llvm::Type* type, llvm::Value* value, bool is_reference) {
   variables.insert(
       std::make_pair(
-        tok.lexeme,
-        VariableData{type, value, is_reference}));
-}
+        tok.lexeme, VariableData{type, value, is_reference})); }
 
 bool ScopeData::check_variable(const Token& tok) const {
   return variables.contains(tok.lexeme);
@@ -59,7 +57,6 @@ void ScopeStack::add_variable(
   }
   data.back().add_variable(name, type, value, is_reference);
 }
-
 const VariableData& ScopeStack::get_variable(const Token& name) const {
   for (auto& scope : data) {
     if (scope.check_variable(name))
@@ -253,6 +250,8 @@ void CodeGenerator::operator()(const AST::Conditional& cond) {
   }
 
   if (if_block -> getTerminator() && else_block && else_block -> getTerminator()) {
+    after_block -> removeFromParent();
+    delete after_block;
     return;
   }
 
@@ -611,8 +610,57 @@ void CodeGenerator::optimize_module() {
   // Create the pass manager.
   // This one corresponds to a typical -O2 optimization pipeline.
   llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(
-      llvm::PassBuilder::OptimizationLevel::O2);
+      llvm::OptimizationLevel::O2);
 
   // Optimize the IR!
   MPM.run(*the_module, MAM);
+}
+
+void CodeGenerator::print_mc(std::string file_name) {
+//   auto target_triple = llvm::sys::getDefaultTargetTriple();
+//   llvm::InitializeAllTargetInfos();
+//   llvm::InitializeAllTargets();
+//   llvm::InitializeAllTargetMCs();
+//   llvm::InitializeAllAsmParsers();
+//   llvm::InitializeAllAsmPrinters();
+// 
+//   std::string error = "failed to find requested target";
+//   auto target = llvm::TargetRegistry::lookupTarget(
+//       target_triple,
+//       error);
+// 
+//   if (!target) {
+//     throw std::runtime_error(error);
+//     return;
+//   }
+// 
+//   auto CPU = "generic";
+//   auto Features = "";
+// 
+//   llvm::TargetOptions opt;
+//   auto RM = std::optional<llvm::Reloc::Model>();
+// 
+//   auto TargetMachine = llvm::Target::createTargetMachine(target_triple, CPU, Features, opt, RM);
+// 
+//   the_module -> setDataLayout(TargetMachine->createDataLayout());
+//   the_module -> setTargetTriple(target_triple);
+// 
+//   std::error_code EC;
+//   llvm::raw_fd_ostream dest(file_name, EC, llvm::sys::fs::OF_None);
+// 
+//   if (EC) {
+//     throw std::runtime_error(fmt::format("could not open file '{}'", file_name));
+//     return;
+//   }
+// 
+//   legacy::PassManager pass; // TODO: change this to smth else
+//   auto FileType = llvm::CGFT_ObjectFile;
+// 
+//   if (TargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
+//     throw std::runtime_error("TargetMachine can't emit a file of this type");
+//     return;
+//   }
+// 
+//   pass.run(*the_module);
+//   dest.flush();
 }

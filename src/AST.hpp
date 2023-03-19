@@ -161,13 +161,13 @@ struct Conditional {
       const Token& _id,
       ExpressionPtr&& _cond,
       Scope&& _if,
-      std::optional<Scope>&& _else = std::nullopt);
+      std::optional<Scope>&& _else);
 
   static StatementPtr make(
       const Token& _id,
       ExpressionPtr&& _cond,
       Scope&& _if,
-      std::optional<Scope>&& _else = std::nullopt);
+      std::optional<Scope>&& _else);
 };
 
 struct ForLoop {
@@ -194,9 +194,6 @@ struct Module {
   std::vector<TopLevelPtr> functions;
 
   Module(const Token& _name, std::vector<TopLevelPtr>&& funcs);
-
-  // std::unique_ptr<llvm::Module> the_module;
 };
 
 } // AST namespace
-

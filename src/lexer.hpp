@@ -10,7 +10,6 @@
 #include <string_view>
 #include <functional>
 #include <numeric>
-
 enum TokenType {
   TOK_LEFT_PAREN,
   TOK_RIGHT_PAREN,
