@@ -1,4 +1,5 @@
 #include "code_generator.hpp"
+#include <stdexcept>
 
 interpreter_exception::interpreter_exception(const Token& tok, const std::string& in)
   : info(fmt::format("('{}', line {}, col {}) : {}",
@@ -24,6 +25,27 @@ bool ScopeData::check_variable(const Token& tok) const {
 
 const VariableData& ScopeData::get_variable(const Token& tok) const {
   return variables.at(tok.lexeme);
+}
+
+std::optional<ScopeData*> ScopeStack::get_top_loop() {
+  for (auto it = data.rbegin(); it != data.rend(); ++it) {
+    if (it -> is_for_loop) 
+      return &*it;
+  }
+  return std::nullopt;
+}
+
+ScopeData* ScopeStack::top() {
+  return &data.back();
+}
+
+void ScopeStack::print() {
+  for (auto& sc : data) {
+    fmt::print("Scope:\n");
+    fmt::print("\tto_break: {}\n", bool(sc.to_break));
+    fmt::print("\tto_continue: {}\n", bool(sc.to_continue));
+    fmt::print("\tused_break: {}\n", bool(sc.used_break));
+  }
 }
 
 void ScopeStack::add_scope() {
@@ -107,11 +129,25 @@ void CodeGenerator::operator()(const AST::StatementPtr& statement) {
     std::visit(*this, *statement);
 }
 
-void CodeGenerator::operator()(const AST::Break &) {
+void CodeGenerator::operator()(const AST::Break& br) {
+  auto fl = scope_stack.get_top_loop();
+  if (!fl) {
+    throw interpreter_exception(br.id, "break must be inside for loop");
+  }
+  if (!the_builder -> GetInsertBlock() -> getTerminator()) {
+    fl.value() -> used_break = true;
+    the_builder -> CreateBr(fl.value() -> to_break.value());
+  }
 }
 
-void CodeGenerator::operator()(const AST::Continue &) {
-
+void CodeGenerator::operator()(const AST::Continue & cont) {
+  auto fl = scope_stack.get_top_loop();
+  if (!fl) {
+    throw interpreter_exception(cont.id, "break must be inside for loop");
+  }
+  if (!the_builder -> GetInsertBlock() -> getTerminator()) {
+    the_builder -> CreateBr(fl.value() -> to_continue.value());
+  }
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::ExpressionPtr& expression) {
@@ -176,6 +212,19 @@ llvm::BasicBlock* CodeGenerator::operator()(
   }
 
   scope_stack.pop_scope();
+
+  return block;
+}
+
+llvm::BasicBlock* CodeGenerator::operator()(
+    const AST::Scope& scope,
+    llvm::BasicBlock* block) {
+
+  the_builder -> SetInsertPoint(block);
+
+  for (const auto& stat : scope.statements) {
+    operator()(stat);
+  }
 
   return block;
 }
@@ -286,42 +335,69 @@ void CodeGenerator::operator()(const AST::ForLoop& fl) {
   
   auto parent_fn  = orig_block -> getParent();
 
-  auto loop_block = operator()(fl.body, "loop_block", parent_fn);
+  auto loop_block = 
+      llvm::BasicBlock::Create(
+          *the_context,
+          "loop_block");
 
-  auto loop_end_block = the_builder -> GetInsertBlock();
+  loop_block -> insertInto(parent_fn);
 
-  the_builder -> SetInsertPoint(orig_block, orig_point);
+  auto latch_block = 
+      llvm::BasicBlock::Create(
+          *the_context,
+          "latch_block");
 
-  if (fl.condition) {
-    llvm::BasicBlock* after_block =
+  latch_block -> insertInto(parent_fn);
+
+  auto after_block =
       llvm::BasicBlock::Create(
           *the_context,
           "after_block");
 
-    after_block -> insertInto(parent_fn);
+  after_block -> insertInto(parent_fn);
 
-    the_builder -> CreateCondBr(
-        operator()(fl.condition.value()), loop_block, after_block);
-
-    the_builder -> SetInsertPoint(loop_end_block);
-
-    if (fl.iteration)
-      operator()(fl.iteration.value());
-
-    the_builder -> CreateCondBr(
-        operator()(fl.condition.value()), loop_block, after_block);
-
-    the_builder -> SetInsertPoint(after_block);
-    return;
-  }
-  the_builder -> CreateBr(loop_block);
-
-  the_builder -> SetInsertPoint(loop_end_block);
+  // latch block
+  the_builder -> SetInsertPoint(latch_block);
 
   if (fl.iteration)
     operator()(fl.iteration.value());
 
-  the_builder -> CreateBr(loop_block);
+  if (fl.condition)
+    the_builder -> CreateCondBr(
+        operator()(fl.condition.value()), loop_block, after_block);
+  else
+    the_builder -> CreateBr(loop_block);
+
+  // loop block 
+  scope_stack.add_scope();
+  scope_stack.top() -> is_for_loop = true;
+  scope_stack.top() -> to_break = after_block;
+  scope_stack.top() -> to_continue = latch_block;
+
+  loop_block = operator()(fl.body, loop_block);
+
+  auto loop_end_block = the_builder -> GetInsertBlock();
+
+  if (!loop_end_block -> getTerminator())
+    the_builder -> CreateBr(latch_block);
+
+  the_builder -> SetInsertPoint(orig_block, orig_point);
+
+  // original block
+  if (fl.condition) 
+    the_builder -> CreateCondBr( // in original block
+        operator()(fl.condition.value()), loop_block, after_block);
+  else
+    the_builder -> CreateBr(loop_block);
+
+  if (fl.condition || scope_stack.top() -> used_break)
+    the_builder -> SetInsertPoint(after_block);
+  else {
+    after_block -> removeFromParent();
+    delete after_block;
+  }
+
+  scope_stack.pop_scope();
 }
 
 void CodeGenerator::operator()(const AST::StatExpr& stat_expr) {

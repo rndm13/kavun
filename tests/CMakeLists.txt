@@ -32,6 +32,7 @@ create_test_sourcelist (Tests
   simple_cond.kvn
   string.kvn
   no_ret_void.kvn
+  break-continue.kvn
   unary_operator.kvn
   valid_program1.kvn
   valid_program2.kvn

@@ -1,9 +1,22 @@
 module control;
 
+extern fn printf(string);
+
 fn main() {
   for ;; {
+    printf("Loop begin\n");
     if true {
-     break;
+      printf("Loop break\n");
+      break;
     }
+    printf("Loop end\n");
+  }
+  for ;; {
+    printf("Loop begin\n");
+    if true {
+      printf("Loop continue\n");
+      continue;
+    }
+    printf("Loop end\n");
   }
 }

@@ -57,7 +57,10 @@ class ScopeData {
   std::unordered_map<std::string, VariableData> variables;
 
 public:
-  bool terminated;
+  std::optional<llvm::BasicBlock*> to_continue;
+  std::optional<llvm::BasicBlock*> to_break;
+  bool is_for_loop = false;
+  bool used_break = false;
 
   void add_variable(const Token &, llvm::Type *, llvm::Value *, bool);
   void assign_variable(const Token &, llvm::Value *);
@@ -72,6 +75,9 @@ public:
   void add_scope();
   void pop_scope();
 
+  void print();
+  std::optional<ScopeData*> get_top_loop();
+  ScopeData* top();
   void add_variable(const Token &, llvm::Type *, llvm::Value *, bool);
   void assign_variable(const Token &, llvm::Value *);
   bool check_variable(const Token &) const;
@@ -104,6 +110,8 @@ public:
   llvm::Function *operator()(const AST::FnProto &);
   llvm::BasicBlock *operator()(const AST::Scope &, std::string block_name,
                                llvm::Function *parent);
+
+  llvm::BasicBlock *operator()(const AST::Scope &, llvm::BasicBlock*);
 
   // Top level
   void operator()(const AST::Extern &);
