@@ -26,6 +26,8 @@ struct Extern;
 struct FnDecl;
 
 // Statements
+struct Break;
+struct Continue;
 struct Conditional;
 struct ForLoop;
 struct StatExpr;
@@ -45,7 +47,7 @@ using TopLevel = std::variant
 using TopLevelPtr = std::unique_ptr<TopLevel>;
 
 using Statement = std::variant
-  <Conditional, ForLoop, StatExpr, Return, VarDecl>;
+  <Conditional, ForLoop, StatExpr, Return, VarDecl, Break, Continue>;
 using StatementPtr = std::unique_ptr<Statement>;
   
 using Expression = std::variant
@@ -76,6 +78,18 @@ struct Return {
   std::optional<ExpressionPtr> opt_expression;
   Return(std::optional<ExpressionPtr>&& _expression = std::nullopt);
   static StatementPtr make(std::optional<ExpressionPtr>&& _expression = std::nullopt);
+};
+
+struct Break {
+  Token id;
+  Break(const Token&);
+  static StatementPtr make(const Token&);
+};
+
+struct Continue {
+  Token id;
+  Continue(const Token&);
+  static StatementPtr make(const Token&);
 };
 
 struct ParamDecl {

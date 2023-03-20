@@ -1,0 +1,9 @@
+module control;
+
+fn main() {
+  for ;; {
+    if true {
+     break;
+    }
+  }
+}

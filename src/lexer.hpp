@@ -99,8 +99,8 @@ class Lexer {
       {"true", TOK_TRUE},
       {"var", TOK_VAR},
       {"module", TOK_MODULE},
-      {"break", TOK_MODULE},
-      {"continue", TOK_MODULE},
+      {"break", TOK_BREAK},
+      {"continue", TOK_CONTINUE},
       {"extern", TOK_EXTERN},
   };
 

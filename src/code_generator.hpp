@@ -115,6 +115,8 @@ public:
   void operator()(const AST::StatExpr &);
   void operator()(const AST::Return &);
   void operator()(const AST::VarDecl &);
+  void operator()(const AST::Break &);
+  void operator()(const AST::Continue &);
 
   // Expression
   llvm::Value *operator()(const AST::BinOperator &);

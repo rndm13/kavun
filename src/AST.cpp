@@ -27,6 +27,18 @@ StatementPtr StatExpr::make(ExpressionPtr&& _expr) {
       StatExpr(std::forward<ExpressionPtr>(_expr)));
 }
 
+Break::Break(const Token& _id) : id(_id) { }
+StatementPtr Break::make(const Token& _id) {
+  return std::make_unique<Statement>(
+      Break(_id));
+}
+
+Continue::Continue(const Token& _id) : id(_id) { }
+StatementPtr Continue::make(const Token& _id) {
+  return std::make_unique<Statement>(
+      Continue(_id));
+}
+
 Return::Return(std::optional<ExpressionPtr>&& _expression) 
   : opt_expression(
       std::forward<std::optional<ExpressionPtr>>(_expression)) { }

@@ -1,4 +1,5 @@
 #include "parser.hpp"
+#include "lexer.hpp"
 
 AST::Module Parser::handle_module() {
   assertion(peek().type == TOK_MODULE, "module must start with module declaration");
@@ -113,14 +114,14 @@ AST::StatementPtr Parser::handle_statement() {
   if (peek().type == TOK_VAR) {
     result = handle_vd();
     move_cursor();
-    assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+    assertion(peek().type == TOK_SEMICOLON, "missing a semicolon");
     return result; 
   } 
 
   if (peek().type == TOK_RETURN) {
     result = handle_return();
     move_cursor();
-    assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+    assertion(peek().type == TOK_SEMICOLON, "missing a semicolon");
     return result; 
   }
 
@@ -134,10 +135,24 @@ AST::StatementPtr Parser::handle_statement() {
     return result;
   }
 
+  if (peek().type == TOK_BREAK) {
+    result = AST::Break::make(peek());
+    move_cursor();
+    assertion(peek().type == TOK_SEMICOLON, "missing a semicolon");
+    return result; 
+  }
+  
+  if (peek().type == TOK_CONTINUE) {
+    result = AST::Continue::make(peek());
+    move_cursor();
+    assertion(peek().type == TOK_SEMICOLON, "missing a semicolon");
+    return result; 
+  }
+
   auto expr = handle_expr();
   result = AST::StatExpr::make(std::forward<AST::ExpressionPtr>(expr));
   move_cursor();
-  assertion(peek().type == TOK_SEMICOLON, "statements must end with a semicolon");
+  assertion(peek().type == TOK_SEMICOLON, "missing a semicolon");
   return result; 
 }
 

@@ -107,6 +107,13 @@ void CodeGenerator::operator()(const AST::StatementPtr& statement) {
     std::visit(*this, *statement);
 }
 
+void CodeGenerator::operator()(const AST::Break &) {
+}
+
+void CodeGenerator::operator()(const AST::Continue &) {
+
+}
+
 llvm::Value* CodeGenerator::operator()(const AST::ExpressionPtr& expression) {
   return std::visit(*this, *expression);
 }
