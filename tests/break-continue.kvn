@@ -3,19 +3,14 @@ module control;
 extern fn printf(string);
 
 fn main() {
-  for ;; {
+  for var i32 i = 0; ; i = i + 1 {
     printf("Loop begin\n");
-    if true {
-      printf("Loop break\n");
-      break;
-    }
-    printf("Loop end\n");
-  }
-  for ;; {
-    printf("Loop begin\n");
-    if true {
+    if i < 5 {
       printf("Loop continue\n");
       continue;
+    } else {
+      printf("Loop break\n");
+      break;
     }
     printf("Loop end\n");
   }
