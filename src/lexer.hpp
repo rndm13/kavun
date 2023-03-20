@@ -35,6 +35,8 @@ enum TokenType {
   TOK_LESS_EQUAL,
   TOK_IDENTIFIER,
   TOK_STRING,
+  TOK_BREAK,
+  TOK_CONTINUE,
   TOK_NUMBER,
   TOK_BOOL,
   TOK_AND,
@@ -97,6 +99,8 @@ class Lexer {
       {"true", TOK_TRUE},
       {"var", TOK_VAR},
       {"module", TOK_MODULE},
+      {"break", TOK_MODULE},
+      {"continue", TOK_MODULE},
       {"extern", TOK_EXTERN},
   };
 
@@ -154,6 +158,7 @@ class Lexer {
     return source.at(current_ind + 1);
   }
 
+  [[nodiscard]]
   bool match(char c) {
     if (peek_next() == c) {
       move_cursor(2);
