@@ -47,7 +47,6 @@ enum TokenType {
   TOK_RETURN,
   TOK_TRUE,
   TOK_VAR,
-  TOK_WHILE,
   TOK_MODULE,
   TOK_EXTERN,
   TOK_EOF,
@@ -97,7 +96,6 @@ class Lexer {
       {"return", TOK_RETURN},
       {"true", TOK_TRUE},
       {"var", TOK_VAR},
-      {"while", TOK_WHILE},
       {"module", TOK_MODULE},
       {"extern", TOK_EXTERN},
   };

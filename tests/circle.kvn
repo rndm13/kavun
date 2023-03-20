@@ -2,8 +2,7 @@ module circle;
 
 extern fn printf(string) void;
 
-
-fn main() void {
+fn main() {
   for var i32 y = 0; y < 10; y = y + 1 {
     for var i32 x = 0; x < 10; x = x + 1 {
       var i32 rx = x - 5;
@@ -17,5 +16,4 @@ fn main() void {
     }
     printf("\n");
   }
-  return;
 }
