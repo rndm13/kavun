@@ -41,6 +41,7 @@ struct Literal;
 struct Variable;
 struct Grouping;
 struct FnCall;
+struct Indexing;
 
 using TopLevel = std::variant
   <Extern, FnDecl>;
@@ -51,7 +52,7 @@ using Statement = std::variant
 using StatementPtr = std::unique_ptr<Statement>;
   
 using Expression = std::variant
-  <BinOperator, UnOperator, Literal, Variable, Grouping, FnCall>;
+  <BinOperator, UnOperator, Literal, Variable, Grouping, FnCall, Indexing>;
 using ExpressionPtr = std::unique_ptr<Expression>;
 
 struct FnProto {
@@ -149,6 +150,15 @@ struct FnCall {
   std::vector<ExpressionPtr> args;
   FnCall(const Token& _id, std::vector<ExpressionPtr>&& input);
   static ExpressionPtr make(const Token& _id, std::vector<ExpressionPtr>&& _args);
+};
+
+struct Indexing {
+  Token id;
+  ExpressionPtr lhs;
+  ExpressionPtr index;
+
+  Indexing(const Token&, ExpressionPtr&&, ExpressionPtr&&);
+  static ExpressionPtr make(const Token&, ExpressionPtr&&, ExpressionPtr&&);
 };
 
 struct Extern {

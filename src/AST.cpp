@@ -1,4 +1,5 @@
 #include "AST.hpp"
+#include <memory>
 
 namespace AST {
 
@@ -188,6 +189,17 @@ StatementPtr ForLoop::make(
         std::forward<std::optional<ExpressionPtr>>(_iter)));
 }
 
+Indexing::Indexing(const Token& _id, ExpressionPtr&& _lhs, ExpressionPtr&& _index)
+: id(_id), 
+  lhs(std::forward<ExpressionPtr>(_lhs)),
+  index(std::forward<ExpressionPtr>(_index)) { }
+ExpressionPtr Indexing::make(const Token& _id, ExpressionPtr&& _lhs, ExpressionPtr&& _index) {
+  return std::make_unique<Expression>(
+    Indexing(
+      _id, 
+      std::forward<ExpressionPtr>(_lhs),
+      std::forward<ExpressionPtr>(_index)));
+}
 
 Module::Module(const Token& _name, std::vector<TopLevelPtr>&& funcs) 
   : name(_name), functions(funcs.size()) {

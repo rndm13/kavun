@@ -133,6 +133,7 @@ public:
   llvm::Value *operator()(const AST::Literal &);
   llvm::Value *operator()(const AST::Variable &);
   llvm::Value *operator()(const AST::Grouping &);
+  llvm::Value *operator()(const AST::Indexing &);
   llvm::Value *operator()(const AST::FnCall &);
 
   llvm::Value *binOpFloat(const AST::BinOperator &, llvm::Value *,

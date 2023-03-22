@@ -84,7 +84,7 @@ Return_values run(FlagInfo fi) {
     auto ast = parser.parse(tokens);
     fmt::print(stderr, "[PARSER PASS]\n");
 
-    CodeGenerator code_generator{};
+    CodeGenerator code_generator(fi.optimization_level);
     code_generator(ast);
 
     fmt::print(stderr, "[INTERPRETER PASS]\n");
