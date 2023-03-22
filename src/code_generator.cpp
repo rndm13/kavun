@@ -642,6 +642,10 @@ llvm::Value* CodeGenerator::operator()(const AST::FnCall& fn) {
   return the_builder -> CreateCall(func, arg_vals, "calltmp");
 }
 
+llvm::Value *CodeGenerator::operator()(const AST::Indexing &) {
+  return nullptr;
+}
+
 void CodeGenerator::operator()(const AST::Module& mod) {
   the_module = std::make_unique<llvm::Module>(
       mod.name.lexeme, 
@@ -655,7 +659,8 @@ void CodeGenerator::operator()(const AST::Module& mod) {
   optimize_module();
 }
 
-CodeGenerator::CodeGenerator() {
+CodeGenerator::CodeGenerator(llvm::OptimizationLevel _optim) 
+: optimization_level(_optim) {
   the_context = std::make_unique<llvm::LLVMContext>();
   the_builder = std::make_unique<llvm::IRBuilder<>>(*the_context);
   type_lookup["i32"]  = llvm::Type::getInt32Ty(*the_context);
@@ -692,8 +697,8 @@ void CodeGenerator::optimize_module() {
 
   // Create the pass manager.
   // This one corresponds to a typical -O2 optimization pipeline.
-  llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(
-      llvm::OptimizationLevel::O2);
+  llvm::ModulePassManager MPM =
+    PB.buildPerModuleDefaultPipeline(optimization_level);
 
   // Optimize the IR!
   MPM.run(*the_module, MAM);

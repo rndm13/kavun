@@ -99,6 +99,7 @@ class CodeGenerator {
   static void warn(Token tok, const std::string_view &in);
 
 public:
+  llvm::OptimizationLevel optimization_level;
   std::unique_ptr<llvm::Module> the_module;
 
   void operator()(const AST::Module &);
@@ -141,7 +142,7 @@ public:
   llvm::Value *binOpBoolean(const AST::BinOperator &, llvm::Value *,
                             llvm::Value *);
 
-  CodeGenerator();
+  CodeGenerator(llvm::OptimizationLevel = llvm::OptimizationLevel::O2);
 
   void optimize_module();
 };
