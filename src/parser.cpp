@@ -437,9 +437,9 @@ AST::TypePtr Parser::handle_array_type() {
     std::optional<AST::ExpressionPtr> size = std::nullopt;
     if (peek().type != TOK_RIGHT_BRACE) {
       size = handle_expr();
+      move_cursor();
     }
     assertion(peek().type == TOK_RIGHT_BRACE, "missing right brace");
-    move_cursor();
     type = AST::ArrayType::make(
         id,
         std::forward<AST::TypePtr>(type),

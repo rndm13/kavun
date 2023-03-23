@@ -1,0 +1,5 @@
+module array;
+
+fn main() {
+  var i32[5][4][3] array = 0;
+}

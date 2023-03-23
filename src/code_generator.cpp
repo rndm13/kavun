@@ -127,11 +127,18 @@ llvm::Type* CodeGenerator::get_type(Token identifier) {
 llvm::Type* CodeGenerator::operator()(const AST::TypePtr& type) {
   return std::visit(*this, *type);
 }
+
 llvm::Type* CodeGenerator::operator()(const AST::Typename& type) {
   return get_type(type.id);
 }
-llvm::Type* CodeGenerator::operator()(const AST::ArrayType&) {
-  return nullptr;
+
+llvm::Type* CodeGenerator::operator()(const AST::ArrayType& array_type) {
+  auto type = operator()(array_type.orig_type);
+  if (std::holds_alternative<AST::Typename>(*array_type.orig_type)) {
+    return type;
+  }
+  type = llvm::PointerType::get(type, 0); 
+  return type;
 }
 
 void CodeGenerator::operator()(const AST::StatementPtr& statement) {
