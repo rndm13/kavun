@@ -1,13 +1,12 @@
 #pragma once
 
-#include <vector>
+#include <functional>
+#include <memory>
+#include <optional>
 #include <stack>
 #include <string>
-#include <memory>
-#include <functional>
-#include <stack>
-#include <optional>
 #include <variant>
+#include <vector>
 
 #include <fmt/core.h>
 #include <fmt/ostream.h>
@@ -16,18 +15,23 @@
 
 namespace AST {
 struct Module;
+struct ParamDecl;
+struct FnProto;
+struct Scope;
 
 // Types
 struct Typename;
 struct ArrayType;
 
-struct ParamDecl;
-struct FnProto;
-struct Scope;
+using Type = std::variant<Typename, ArrayType>;
+using TypePtr = std::unique_ptr<Type>;
 
 // Top level
 struct Extern;
 struct FnDecl;
+
+using TopLevel = std::variant<Extern, FnDecl>;
+using TopLevelPtr = std::unique_ptr<TopLevel>;
 
 // Statements
 struct Break;
@@ -38,6 +42,10 @@ struct StatExpr;
 struct Return;
 struct VarDecl;
 
+using Statement = std::variant<Conditional, ForLoop, StatExpr, Return, VarDecl,
+                               Break, Continue>;
+using StatementPtr = std::unique_ptr<Statement>;
+
 // Expression
 struct BinOperator;
 struct UnOperator;
@@ -47,34 +55,29 @@ struct Grouping;
 struct FnCall;
 struct Indexing;
 
-using Type = std::variant
-  <Typename, ArrayType>;
-using TypePtr = std::unique_ptr<Type>;
-
-using TopLevel = std::variant
-  <Extern, FnDecl>;
-using TopLevelPtr = std::unique_ptr<TopLevel>;
-
-using Statement = std::variant
-  <Conditional, ForLoop, StatExpr, Return, VarDecl, Break, Continue>;
-using StatementPtr = std::unique_ptr<Statement>;
-  
-using Expression = std::variant
-  <BinOperator, UnOperator, Literal, Variable, Grouping, FnCall, Indexing>;
+using Expression = std::variant<BinOperator, UnOperator, Literal, Variable,
+                                Grouping, FnCall, Indexing>;
 using ExpressionPtr = std::unique_ptr<Expression>;
+
+struct Module {
+  Token name;
+  std::vector<TopLevelPtr> functions;
+
+  Module(const Token &_name, std::vector<TopLevelPtr> &&funcs);
+};
 
 struct Typename {
   Token id;
-  Typename(const Token&);
-  static TypePtr make(const Token&);
+  Typename(const Token &);
+  static TypePtr make(const Token &);
 };
 
 struct ArrayType {
   Token id;
   TypePtr orig_type;
   std::optional<ExpressionPtr> size;
-  ArrayType(const Token&, TypePtr&&, std::optional<ExpressionPtr>);
-  static TypePtr make(const Token&, TypePtr&&, std::optional<ExpressionPtr>);
+  ArrayType(const Token &, TypePtr &&, std::optional<ExpressionPtr>);
+  static TypePtr make(const Token &, TypePtr &&, std::optional<ExpressionPtr>);
 };
 
 struct FnProto {
@@ -82,44 +85,46 @@ struct FnProto {
   std::vector<ParamDecl> parameters;
   std::optional<Token> return_type;
 
-  FnProto(const Token& _id, std::vector<ParamDecl>&& _params, const std::optional<Token>& _return_type);
+  FnProto(const Token &_id, std::vector<ParamDecl> &&_params,
+          const std::optional<Token> &_return_type);
 };
 
 struct Scope {
   std::vector<StatementPtr> statements;
-  Scope(std::vector<StatementPtr>&&);
+  Scope(std::vector<StatementPtr> &&);
 };
 
 // Statement Expression not lisp's "s-expression"
-struct StatExpr { 
+struct StatExpr {
   ExpressionPtr expr;
-  StatExpr(ExpressionPtr&&);
-  static StatementPtr make(ExpressionPtr&&);
+  StatExpr(ExpressionPtr &&);
+  static StatementPtr make(ExpressionPtr &&);
 };
 
 struct Return {
   std::optional<ExpressionPtr> opt_expression;
-  Return(std::optional<ExpressionPtr>&& _expression = std::nullopt);
-  static StatementPtr make(std::optional<ExpressionPtr>&& _expression = std::nullopt);
+  Return(std::optional<ExpressionPtr> &&_expression = std::nullopt);
+  static StatementPtr
+  make(std::optional<ExpressionPtr> &&_expression = std::nullopt);
 };
 
 struct Break {
   Token id;
-  Break(const Token&);
-  static StatementPtr make(const Token&);
+  Break(const Token &);
+  static StatementPtr make(const Token &);
 };
 
 struct Continue {
   Token id;
-  Continue(const Token&);
-  static StatementPtr make(const Token&);
+  Continue(const Token &);
+  static StatementPtr make(const Token &);
 };
 
 struct ParamDecl {
   TypePtr type;
   std::optional<Token> id;
 
-  ParamDecl(TypePtr&&, const std::optional<Token>&);
+  ParamDecl(TypePtr &&, const std::optional<Token> &);
 };
 
 struct VarDecl {
@@ -127,51 +132,53 @@ struct VarDecl {
   Token id;
   ExpressionPtr expression;
 
-  VarDecl(TypePtr&& _type, const Token& _id, ExpressionPtr&& _expr);
-  static StatementPtr make(TypePtr&&, const Token&, ExpressionPtr&& _expr);
+  VarDecl(TypePtr &&_type, const Token &_id, ExpressionPtr &&_expr);
+  static StatementPtr make(TypePtr &&, const Token &, ExpressionPtr &&_expr);
 };
 
 struct Literal {
   Token value;
-  Literal(const Token& t);
+  Literal(const Token &t);
 
-  static ExpressionPtr make(const Token&);
+  static ExpressionPtr make(const Token &);
 };
 
 struct Variable {
   Token id;
-  Variable(const Token& t);
+  Variable(const Token &t);
 
-  static ExpressionPtr make(const Token&);
+  static ExpressionPtr make(const Token &);
 };
 
-struct BinOperator{
+struct BinOperator {
   Token op;
   ExpressionPtr lhs, rhs;
 
-  BinOperator(ExpressionPtr&& _lhs, const Token& t, ExpressionPtr&& _rhs);
-  static ExpressionPtr make(ExpressionPtr&& _lhs, const Token& t, ExpressionPtr&& _rhs);
+  BinOperator(ExpressionPtr &&_lhs, const Token &t, ExpressionPtr &&_rhs);
+  static ExpressionPtr make(ExpressionPtr &&_lhs, const Token &t,
+                            ExpressionPtr &&_rhs);
 };
 
 struct UnOperator {
   Token op;
-  ExpressionPtr  rhs;
-  UnOperator(const Token& t, ExpressionPtr && _rhs) ;
-  static ExpressionPtr make(const Token& t, ExpressionPtr&& _rhs);
+  ExpressionPtr rhs;
+  UnOperator(const Token &t, ExpressionPtr &&_rhs);
+  static ExpressionPtr make(const Token &t, ExpressionPtr &&_rhs);
 };
 
 struct Grouping {
-  ExpressionPtr  expr;
+  ExpressionPtr expr;
 
-  Grouping(ExpressionPtr&& _expr);
-  static ExpressionPtr make(ExpressionPtr&& _expr);
+  Grouping(ExpressionPtr &&_expr);
+  static ExpressionPtr make(ExpressionPtr &&_expr);
 };
 
 struct FnCall {
   Token id;
   std::vector<ExpressionPtr> args;
-  FnCall(const Token& _id, std::vector<ExpressionPtr>&& input);
-  static ExpressionPtr make(const Token& _id, std::vector<ExpressionPtr>&& _args);
+  FnCall(const Token &_id, std::vector<ExpressionPtr> &&input);
+  static ExpressionPtr make(const Token &_id,
+                            std::vector<ExpressionPtr> &&_args);
 };
 
 struct Indexing {
@@ -179,21 +186,21 @@ struct Indexing {
   ExpressionPtr lhs;
   ExpressionPtr index;
 
-  Indexing(const Token&, ExpressionPtr&&, ExpressionPtr&&);
-  static ExpressionPtr make(const Token&, ExpressionPtr&&, ExpressionPtr&&);
+  Indexing(const Token &, ExpressionPtr &&, ExpressionPtr &&);
+  static ExpressionPtr make(const Token &, ExpressionPtr &&, ExpressionPtr &&);
 };
 
 struct Extern {
   FnProto proto;
-  Extern(FnProto&& _proto);
-  static TopLevelPtr make(FnProto&& _proto);
+  Extern(FnProto &&_proto);
+  static TopLevelPtr make(FnProto &&_proto);
 };
 
 struct FnDecl {
   FnProto proto;
   Scope body;
-  FnDecl(FnProto&& _proto, Scope&& _body);
-  static TopLevelPtr make(FnProto&& _proto, Scope&& _body);
+  FnDecl(FnProto &&_proto, Scope &&_body);
+  static TopLevelPtr make(FnProto &&_proto, Scope &&_body);
 };
 
 struct Conditional {
@@ -203,43 +210,28 @@ struct Conditional {
   Scope if_body;
   std::optional<Scope> else_body;
 
-  Conditional(
-      const Token& _id,
-      ExpressionPtr&& _cond,
-      Scope&& _if,
-      std::optional<Scope>&& _else);
+  Conditional(const Token &_id, ExpressionPtr &&_cond, Scope &&_if,
+              std::optional<Scope> &&_else);
 
-  static StatementPtr make(
-      const Token& _id,
-      ExpressionPtr&& _cond,
-      Scope&& _if,
-      std::optional<Scope>&& _else);
+  static StatementPtr make(const Token &_id, ExpressionPtr &&_cond, Scope &&_if,
+                           std::optional<Scope> &&_else);
 };
 
 struct ForLoop {
-  std::optional<StatementPtr>  variable;
+  std::optional<StatementPtr> variable;
   std::optional<ExpressionPtr> condition;
   std::optional<ExpressionPtr> iteration;
 
   Scope body;
 
-  ForLoop(Scope&&,
-          std::optional<StatementPtr>&&  = std::nullopt,
-          std::optional<ExpressionPtr>&& = std::nullopt,
-          std::optional<ExpressionPtr>&& = std::nullopt);
+  ForLoop(Scope &&, std::optional<StatementPtr> && = std::nullopt,
+          std::optional<ExpressionPtr> && = std::nullopt,
+          std::optional<ExpressionPtr> && = std::nullopt);
 
-  static StatementPtr make(
-      Scope&&,
-      std::optional<StatementPtr>&&  = std::nullopt,
-      std::optional<ExpressionPtr>&& = std::nullopt,
-      std::optional<ExpressionPtr>&& = std::nullopt);
+  static StatementPtr make(Scope &&,
+                           std::optional<StatementPtr> && = std::nullopt,
+                           std::optional<ExpressionPtr> && = std::nullopt,
+                           std::optional<ExpressionPtr> && = std::nullopt);
 };
 
-struct Module {
-  Token name;
-  std::vector<TopLevelPtr> functions;
-
-  Module(const Token& _name, std::vector<TopLevelPtr>&& funcs);
-};
-
-} // AST namespace
+} // namespace AST
