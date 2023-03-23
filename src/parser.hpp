@@ -60,6 +60,7 @@ class Parser {
   AST::StatementPtr  handle_conditional();
   AST::StatementPtr  handle_for();
   AST::ExpressionPtr handle_expr();
+  AST::TypePtr       handle_type();
 
   // Expressions:
   AST::ExpressionPtr primary() noexcept;
@@ -71,6 +72,10 @@ class Parser {
   AST::ExpressionPtr conjunction() noexcept;
   AST::ExpressionPtr disjunction() noexcept;
   AST::ExpressionPtr assignment() noexcept;
+
+  // Types:
+  AST::TypePtr       handle_typename() noexcept;
+  AST::TypePtr       handle_array_type() noexcept;
   
   bool match(std::vector<TokenType>, int to_peek = 1);
 

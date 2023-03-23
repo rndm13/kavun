@@ -17,6 +17,10 @@
 namespace AST {
 struct Module;
 
+// Types
+struct Typename;
+struct ArrayType;
+
 struct ParamDecl;
 struct FnProto;
 struct Scope;
@@ -43,6 +47,10 @@ struct Grouping;
 struct FnCall;
 struct Indexing;
 
+using Type = std::variant
+  <Typename, ArrayType>;
+using TypePtr = std::unique_ptr<Type>;
+
 using TopLevel = std::variant
   <Extern, FnDecl>;
 using TopLevelPtr = std::unique_ptr<TopLevel>;
@@ -54,6 +62,20 @@ using StatementPtr = std::unique_ptr<Statement>;
 using Expression = std::variant
   <BinOperator, UnOperator, Literal, Variable, Grouping, FnCall, Indexing>;
 using ExpressionPtr = std::unique_ptr<Expression>;
+
+struct Typename {
+  Token id;
+  Typename(const Token&);
+  static TypePtr make(const Token&);
+};
+
+struct ArrayType {
+  Token id;
+  TypePtr orig_type;
+  std::optional<ExpressionPtr> size;
+  ArrayType(const Token&, TypePtr&&, std::optional<ExpressionPtr>);
+  static TypePtr make(const Token&, TypePtr&&, std::optional<ExpressionPtr>);
+};
 
 struct FnProto {
   Token id;

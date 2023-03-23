@@ -13,6 +13,24 @@ FnProto::FnProto(const Token& _id, std::vector<ParamDecl>&& _params, const std::
   }
 }
 
+Typename::Typename(const Token& _id) : id(_id) { }
+TypePtr Typename::make(const Token& id) {
+  return std::make_unique<Type>(
+      Typename(id));
+}
+
+ArrayType::ArrayType(const Token& _id, TypePtr&& _orig_type, std::optional<ExpressionPtr> _size)
+: id(_id),
+  orig_type(std::forward<TypePtr>(_orig_type)),
+  size(std::forward<std::optional<ExpressionPtr>>(_size)) {}
+TypePtr ArrayType::make(const Token& id, TypePtr&& orig_type, std::optional<ExpressionPtr> size) {
+  return std::make_unique<Type>(
+      ArrayType(
+        id,
+        std::forward<TypePtr>(orig_type),
+        std::forward<std::optional<ExpressionPtr>>(size)));
+}
+
 Scope::Scope(std::vector<StatementPtr>&& input) : statements(input.size()) { 
   for (size_t ind = 0;ind < input.size(); ++ind) {
     statements[ind].reset(input[ind].release());

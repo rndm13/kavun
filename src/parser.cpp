@@ -1,5 +1,7 @@
 #include "parser.hpp"
+#include "AST.hpp"
 #include "lexer.hpp"
+#include <optional>
 
 AST::Module Parser::handle_module() {
   assertion(peek().type == TOK_MODULE, "module must start with module declaration");
@@ -417,4 +419,32 @@ AST::ExpressionPtr Parser::primary() noexcept {
         std::forward<AST::ExpressionPtr>(expr));
   }
   return nullptr;
+}
+
+AST::TypePtr Parser::handle_type() {
+  return handle_array_type();
+}
+
+AST::TypePtr Parser::handle_typename() noexcept {
+  assertion(peek().type == TOK_IDENTIFIER, "typename must be an identifier");
+  return AST::Typename::make(peek());
+}
+
+AST::TypePtr Parser::handle_array_type() noexcept {
+  auto type = handle_typename();
+  move_cursor();
+  while (peek().type == TOK_LEFT_BRACE) {
+    auto id = peek();
+    move_cursor();
+    std::optional<AST::ExpressionPtr> size = std::nullopt;
+    if (peek().type != TOK_RIGHT_BRACE) {
+      size = handle_expr();
+    }
+    assertion(peek().type == TOK_RIGHT_BRACE, "missing right brace");
+    type = AST::ArrayType::make(
+        id,
+        std::forward<AST::TypePtr>(type),
+        std::forward<std::optional<AST::ExpressionPtr>>(size));
+  }
+  return type;
 }
