@@ -116,19 +116,19 @@ struct Continue {
 };
 
 struct ParamDecl {
-  Token type;
+  TypePtr type;
   std::optional<Token> id;
 
-  ParamDecl(const Token&, const std::optional<Token>&);
+  ParamDecl(TypePtr&&, const std::optional<Token>&);
 };
 
 struct VarDecl {
-  Token type;
+  TypePtr type;
   Token id;
   ExpressionPtr expression;
 
-  VarDecl(const Token& _type, const Token& _id, ExpressionPtr&& _expr);
-  static StatementPtr make(const Token&, const Token&, ExpressionPtr&& _expr);
+  VarDecl(TypePtr&& _type, const Token& _id, ExpressionPtr&& _expr);
+  static StatementPtr make(TypePtr&&, const Token&, ExpressionPtr&& _expr);
 };
 
 struct Literal {

@@ -57,8 +57,8 @@ class ScopeData {
   std::unordered_map<std::string, VariableData> variables;
 
 public:
-  std::optional<llvm::BasicBlock*> to_continue;
-  std::optional<llvm::BasicBlock*> to_break;
+  std::optional<llvm::BasicBlock *> to_continue;
+  std::optional<llvm::BasicBlock *> to_break;
   bool is_for_loop = false;
   bool used_break = false;
 
@@ -76,8 +76,8 @@ public:
   void pop_scope();
 
   void print();
-  std::optional<ScopeData*> get_top_loop();
-  ScopeData* top();
+  std::optional<ScopeData *> get_top_loop();
+  ScopeData *top();
   void add_variable(const Token &, llvm::Type *, llvm::Value *, bool);
   void assign_variable(const Token &, llvm::Value *);
   bool check_variable(const Token &) const;
@@ -112,7 +112,7 @@ public:
   llvm::BasicBlock *operator()(const AST::Scope &, std::string block_name,
                                llvm::Function *parent);
 
-  llvm::BasicBlock *operator()(const AST::Scope &, llvm::BasicBlock*);
+  llvm::BasicBlock *operator()(const AST::Scope &, llvm::BasicBlock *);
 
   // Top level
   void operator()(const AST::Extern &);
@@ -142,6 +142,10 @@ public:
                             llvm::Value *);
   llvm::Value *binOpBoolean(const AST::BinOperator &, llvm::Value *,
                             llvm::Value *);
+
+  llvm::Type* operator()(const AST::TypePtr&);
+  llvm::Type* operator()(const AST::Typename&);
+  llvm::Type* operator()(const AST::ArrayType&);
 
   CodeGenerator(llvm::OptimizationLevel = llvm::OptimizationLevel::O2);
 

@@ -74,8 +74,8 @@ class Parser {
   AST::ExpressionPtr assignment() noexcept;
 
   // Types:
-  AST::TypePtr       handle_typename() noexcept;
-  AST::TypePtr       handle_array_type() noexcept;
+  AST::TypePtr       handle_typename();
+  AST::TypePtr       handle_array_type();
   
   bool match(std::vector<TokenType>, int to_peek = 1);
 

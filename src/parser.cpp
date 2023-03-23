@@ -31,14 +31,13 @@ AST::TopLevelPtr Parser::handle_top_level() {
 }
 
 AST::ParamDecl Parser::handle_param_decl() {
-  assertion(peek().type == TOK_IDENTIFIER, "parameter declaration must have a type");
-  auto type = peek();
-  std::optional<Token> name;
+  auto type = handle_type();
+  std::optional<Token> name = std::nullopt;
   if (peek(1).type == TOK_IDENTIFIER) {
     move_cursor();
     name = peek();
   }
-  return AST::ParamDecl(type, name);
+  return AST::ParamDecl(std::forward<AST::TypePtr>(type), name);
 }
 
 AST::FnProto Parser::handle_fn_proto() {
@@ -223,8 +222,7 @@ AST::StatementPtr Parser::handle_return() {
 AST::StatementPtr Parser::handle_vd() {
   assertion(peek().type == TOK_VAR, "variable declaration must start with 'var'");
   move_cursor();
-  assertion(peek().type == TOK_IDENTIFIER, "variable declaration must have a type");
-  auto type = peek();
+  auto type = handle_type();
   move_cursor();
   assertion(peek().type == TOK_IDENTIFIER, "variable name must be a valid identifier");
   auto id = peek();
@@ -233,7 +231,7 @@ AST::StatementPtr Parser::handle_vd() {
   move_cursor(); 
   auto expr = handle_expr();
   return AST::VarDecl::make(
-      type,
+      std::forward<AST::TypePtr>(type),
       id, 
       std::forward<AST::ExpressionPtr>(expr));
 }
@@ -425,15 +423,15 @@ AST::TypePtr Parser::handle_type() {
   return handle_array_type();
 }
 
-AST::TypePtr Parser::handle_typename() noexcept {
+AST::TypePtr Parser::handle_typename() {
   assertion(peek().type == TOK_IDENTIFIER, "typename must be an identifier");
   return AST::Typename::make(peek());
 }
 
-AST::TypePtr Parser::handle_array_type() noexcept {
+AST::TypePtr Parser::handle_array_type() {
   auto type = handle_typename();
-  move_cursor();
-  while (peek().type == TOK_LEFT_BRACE) {
+  while (peek(1).type == TOK_LEFT_BRACE) {
+    move_cursor();
     auto id = peek();
     move_cursor();
     std::optional<AST::ExpressionPtr> size = std::nullopt;
@@ -441,6 +439,7 @@ AST::TypePtr Parser::handle_array_type() noexcept {
       size = handle_expr();
     }
     assertion(peek().type == TOK_RIGHT_BRACE, "missing right brace");
+    move_cursor();
     type = AST::ArrayType::make(
         id,
         std::forward<AST::TypePtr>(type),

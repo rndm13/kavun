@@ -124,6 +124,16 @@ llvm::Type* CodeGenerator::get_type(Token identifier) {
   }
 }
 
+llvm::Type* CodeGenerator::operator()(const AST::TypePtr& type) {
+  return std::visit(*this, *type);
+}
+llvm::Type* CodeGenerator::operator()(const AST::Typename& type) {
+  return get_type(type.id);
+}
+llvm::Type* CodeGenerator::operator()(const AST::ArrayType&) {
+  return nullptr;
+}
+
 void CodeGenerator::operator()(const AST::StatementPtr& statement) {
   if (!the_builder -> GetInsertBlock() -> getTerminator())
     std::visit(*this, *statement);
@@ -164,7 +174,7 @@ llvm::Function* CodeGenerator::operator()(
   std::vector<llvm::Type*> parameter_types{};
   parameter_types.reserve(proto.parameters.size());
   for (auto& param : proto.parameters) 
-    parameter_types.push_back(get_type(param.type));
+    parameter_types.push_back(operator()(param.type));
 
   // return type
   llvm::Type* rt;
@@ -419,7 +429,7 @@ void CodeGenerator::operator()(const AST::VarDecl& var_decl) {
     throw interpreter_exception(var_decl.id, "redefinition of a variable");
 
   auto expr_eval = operator()( var_decl.expression);
-  auto type = get_type(var_decl.type);
+  auto type = operator()(var_decl.type);
   auto alloca = the_builder -> CreateAlloca(type, nullptr, var_decl.id.lexeme);
   the_builder -> CreateStore(expr_eval, alloca);
 
@@ -645,6 +655,7 @@ llvm::Value* CodeGenerator::operator()(const AST::FnCall& fn) {
 llvm::Value *CodeGenerator::operator()(const AST::Indexing &) {
   return nullptr;
 }
+
 
 void CodeGenerator::operator()(const AST::Module& mod) {
   the_module = std::make_unique<llvm::Module>(
