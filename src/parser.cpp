@@ -420,30 +420,10 @@ AST::ExpressionPtr Parser::primary() noexcept {
 }
 
 AST::TypePtr Parser::handle_type() {
-  return handle_array_type();
+  return handle_typename();
 }
 
 AST::TypePtr Parser::handle_typename() {
   assertion(peek().type == TOK_IDENTIFIER, "typename must be an identifier");
   return AST::Typename::make(peek());
-}
-
-AST::TypePtr Parser::handle_array_type() {
-  auto type = handle_typename();
-  while (peek(1).type == TOK_LEFT_BRACE) {
-    move_cursor();
-    auto id = peek();
-    move_cursor();
-    std::optional<AST::ExpressionPtr> size = std::nullopt;
-    if (peek().type != TOK_RIGHT_BRACE) {
-      size = handle_expr();
-      move_cursor();
-    }
-    assertion(peek().type == TOK_RIGHT_BRACE, "missing right brace");
-    type = AST::ArrayType::make(
-        id,
-        std::forward<AST::TypePtr>(type),
-        std::forward<std::optional<AST::ExpressionPtr>>(size));
-  }
-  return type;
 }

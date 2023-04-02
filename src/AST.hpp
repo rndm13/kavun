@@ -21,9 +21,8 @@ struct Scope;
 
 // Types
 struct Typename;
-struct ArrayType;
 
-using Type = std::variant<Typename, ArrayType>;
+using Type = std::variant<Typename>;
 using TypePtr = std::unique_ptr<Type>;
 
 // Top level
@@ -53,10 +52,9 @@ struct Literal;
 struct Variable;
 struct Grouping;
 struct FnCall;
-struct Indexing;
 
 using Expression = std::variant<BinOperator, UnOperator, Literal, Variable,
-                                Grouping, FnCall, Indexing>;
+                                Grouping, FnCall>;
 using ExpressionPtr = std::unique_ptr<Expression>;
 
 struct Module {

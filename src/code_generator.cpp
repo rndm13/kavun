@@ -132,15 +132,6 @@ llvm::Type* CodeGenerator::operator()(const AST::Typename& type) {
   return get_type(type.id);
 }
 
-llvm::Type* CodeGenerator::operator()(const AST::ArrayType& array_type) {
-  auto type = operator()(array_type.orig_type);
-  if (std::holds_alternative<AST::Typename>(*array_type.orig_type)) {
-    return type;
-  }
-  type = llvm::PointerType::get(type, 0); 
-  return type;
-}
-
 void CodeGenerator::operator()(const AST::StatementPtr& statement) {
   if (!the_builder -> GetInsertBlock() -> getTerminator())
     std::visit(*this, *statement);
@@ -658,11 +649,6 @@ llvm::Value* CodeGenerator::operator()(const AST::FnCall& fn) {
 
   return the_builder -> CreateCall(func, arg_vals, "calltmp");
 }
-
-llvm::Value *CodeGenerator::operator()(const AST::Indexing &) {
-  return nullptr;
-}
-
 
 void CodeGenerator::operator()(const AST::Module& mod) {
   the_module = std::make_unique<llvm::Module>(

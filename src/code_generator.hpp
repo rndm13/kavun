@@ -133,7 +133,6 @@ public:
   llvm::Value *operator()(const AST::Literal &);
   llvm::Value *operator()(const AST::Variable &);
   llvm::Value *operator()(const AST::Grouping &);
-  llvm::Value *operator()(const AST::Indexing &);
   llvm::Value *operator()(const AST::FnCall &);
 
   llvm::Value *binOpFloat(const AST::BinOperator &, llvm::Value *,
@@ -145,7 +144,6 @@ public:
 
   llvm::Type* operator()(const AST::TypePtr&);
   llvm::Type* operator()(const AST::Typename&);
-  llvm::Type* operator()(const AST::ArrayType&);
 
   CodeGenerator(llvm::OptimizationLevel = llvm::OptimizationLevel::O2);
 

@@ -19,18 +19,6 @@ TypePtr Typename::make(const Token& id) {
       Typename(id));
 }
 
-ArrayType::ArrayType(const Token& _id, TypePtr&& _orig_type, std::optional<ExpressionPtr> _size)
-: id(_id),
-  orig_type(std::forward<TypePtr>(_orig_type)),
-  size(std::forward<std::optional<ExpressionPtr>>(_size)) {}
-TypePtr ArrayType::make(const Token& id, TypePtr&& orig_type, std::optional<ExpressionPtr> size) {
-  return std::make_unique<Type>(
-      ArrayType(
-        id,
-        std::forward<TypePtr>(orig_type),
-        std::forward<std::optional<ExpressionPtr>>(size)));
-}
-
 Scope::Scope(std::vector<StatementPtr>&& input) : statements(input.size()) { 
   for (size_t ind = 0;ind < input.size(); ++ind) {
     statements[ind].reset(input[ind].release());
@@ -205,18 +193,6 @@ StatementPtr ForLoop::make(
         std::forward<std::optional<StatementPtr>>(_var),
         std::forward<std::optional<ExpressionPtr>>(_cond),
         std::forward<std::optional<ExpressionPtr>>(_iter)));
-}
-
-Indexing::Indexing(const Token& _id, ExpressionPtr&& _lhs, ExpressionPtr&& _index)
-: id(_id), 
-  lhs(std::forward<ExpressionPtr>(_lhs)),
-  index(std::forward<ExpressionPtr>(_index)) { }
-ExpressionPtr Indexing::make(const Token& _id, ExpressionPtr&& _lhs, ExpressionPtr&& _index) {
-  return std::make_unique<Expression>(
-    Indexing(
-      _id, 
-      std::forward<ExpressionPtr>(_lhs),
-      std::forward<ExpressionPtr>(_index)));
 }
 
 Module::Module(const Token& _name, std::vector<TopLevelPtr>&& funcs) 
