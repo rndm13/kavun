@@ -45,7 +45,7 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE lexer parser AST code_generator
   PRIVATE fmt::fmt
   PRIVATE ${llvm_libs}
-  -fsanitize=address # Debug only
+  #  -fsanitize=address # Debug only
   )
 
 enable_testing()
