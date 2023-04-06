@@ -98,6 +98,14 @@ class CodeGenerator {
 
   static void warn(Token tok, const std::string_view &in);
 
+  llvm::Value *binOpFloat(const AST::BinOperator &, llvm::Value *,
+                          llvm::Value *);
+  llvm::Value *binOpInteger(const AST::BinOperator &, llvm::Value *,
+                            llvm::Value *);
+  llvm::Value *binOpBoolean(const AST::BinOperator &, llvm::Value *,
+                            llvm::Value *);
+  void optimize_module();
+
 public:
   llvm::OptimizationLevel optimization_level;
   std::unique_ptr<llvm::Module> the_module;
@@ -135,17 +143,8 @@ public:
   llvm::Value *operator()(const AST::Grouping &);
   llvm::Value *operator()(const AST::FnCall &);
 
-  llvm::Value *binOpFloat(const AST::BinOperator &, llvm::Value *,
-                          llvm::Value *);
-  llvm::Value *binOpInteger(const AST::BinOperator &, llvm::Value *,
-                            llvm::Value *);
-  llvm::Value *binOpBoolean(const AST::BinOperator &, llvm::Value *,
-                            llvm::Value *);
-
   llvm::Type* operator()(const AST::TypePtr&);
   llvm::Type* operator()(const AST::Typename&);
 
   CodeGenerator(llvm::OptimizationLevel = llvm::OptimizationLevel::O2);
-
-  void optimize_module();
 };
