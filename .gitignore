@@ -17,3 +17,6 @@ kavun
 *.bl
 .cache 
 build
+latex
+html
+*.bak

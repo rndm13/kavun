@@ -203,6 +203,4 @@ Module::Module(const Token& _name, std::vector<TopLevelPtr>&& funcs)
     functions.at(ind).reset(funcs.at(ind).release());
   }
 }
-
 } // AST namespace
-

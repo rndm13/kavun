@@ -72,14 +72,6 @@ struct Typename {
   static TypePtr make(const Token &);
 };
 
-struct ArrayType {
-  Token id;
-  TypePtr orig_type;
-  std::optional<ExpressionPtr> size;
-  ArrayType(const Token &, TypePtr &&, std::optional<ExpressionPtr>);
-  static TypePtr make(const Token &, TypePtr &&, std::optional<ExpressionPtr>);
-};
-
 struct FnProto {
   Token id;
   std::vector<ParamDecl> parameters;
