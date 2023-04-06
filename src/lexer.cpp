@@ -1,3 +1,5 @@
+/// \file
+
 #include "lexer.hpp"
 
 [[nodiscard]]

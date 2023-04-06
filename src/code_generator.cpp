@@ -79,6 +79,7 @@ void ScopeStack::add_variable(
   }
   data.back().add_variable(name, type, value, is_reference);
 }
+
 const VariableData& ScopeStack::get_variable(const Token& name) const {
   for (auto& scope : data) {
     if (scope.check_variable(name))

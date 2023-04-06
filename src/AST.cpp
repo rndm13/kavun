@@ -1,3 +1,5 @@
+/// \file
+
 #include "AST.hpp"
 #include <memory>
 

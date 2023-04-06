@@ -1,3 +1,5 @@
+/// \file
+
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>

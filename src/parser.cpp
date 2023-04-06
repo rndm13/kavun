@@ -1,3 +1,5 @@
+/// \file
+
 #include "parser.hpp"
 #include "AST.hpp"
 #include "lexer.hpp"
