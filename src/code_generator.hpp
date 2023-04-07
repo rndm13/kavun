@@ -48,7 +48,8 @@ public:
 
 struct VariableData {
   llvm::Type *type;
-  llvm::Value *value; // ptr to stack. Use load, alloca and store
+  llvm::Value *value; 
+  // ptr to stack. Use load, alloca and store
   // Possibly make those fields std::unique_ptr?
   bool is_reference;
 };
@@ -59,7 +60,7 @@ class ScopeData {
 public:
   std::optional<llvm::BasicBlock *> to_continue;
   std::optional<llvm::BasicBlock *> to_break;
-  bool is_for_loop = false;
+  bool is_loop = false;
   bool used_break = false;
 
   void add_variable(const Token &, llvm::Type *, llvm::Value *, bool);
@@ -93,6 +94,8 @@ class CodeGenerator {
 
   std::unordered_map<std::string, llvm::Type *> type_lookup;
 
+  llvm::OptimizationLevel optimization_level;
+
   llvm::Function *get_function(Token);
   llvm::Type *get_type(Token);
 
@@ -107,7 +110,6 @@ class CodeGenerator {
   void optimize_module();
 
 public:
-  llvm::OptimizationLevel optimization_level;
   std::unique_ptr<llvm::Module> the_module;
 
   void operator()(const AST::Module &);

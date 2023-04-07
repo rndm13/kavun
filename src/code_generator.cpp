@@ -29,7 +29,7 @@ const VariableData& ScopeData::get_variable(const Token& tok) const {
 
 std::optional<ScopeData*> ScopeStack::get_top_loop() {
   for (auto it = data.rbegin(); it != data.rend(); ++it) {
-    if (it -> is_for_loop) 
+    if (it -> is_loop) 
       return &*it;
   }
   return std::nullopt;
@@ -379,7 +379,7 @@ void CodeGenerator::operator()(const AST::ForLoop& fl) {
 
   // loop block 
   scope_stack.add_scope();
-  scope_stack.top() -> is_for_loop = true;
+  scope_stack.top() -> is_loop = true;
   scope_stack.top() -> to_break = after_block;
   scope_stack.top() -> to_continue = latch_block;
 
