@@ -28,8 +28,6 @@ class Parser {
   std::vector<Token> tokens;
   size_t current_ind;
 
-  std::vector<std::string> exception_stack;
-
   void move_cursor(size_t to_move = 1) {
     current_ind += to_move;
   }

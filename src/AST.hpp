@@ -16,6 +16,7 @@
 #include "lexer.hpp"
 
 namespace AST {
+
 struct Module;
 struct ParamDecl;
 struct FnProto;
@@ -43,8 +44,7 @@ struct StatExpr;
 struct Return;
 struct VarDecl;
 
-using Statement = std::variant<Conditional, ForLoop, StatExpr, Return, VarDecl,
-                               Break, Continue>;
+using Statement = std::variant<Conditional, ForLoop, StatExpr, Return, VarDecl, Break, Continue>;
 using StatementPtr = std::unique_ptr<Statement>;
 
 // Expression
