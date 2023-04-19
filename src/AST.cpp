@@ -8,8 +8,8 @@ namespace AST {
 ParamDecl::ParamDecl(TypePtr&& _type, const std::optional<Token>& _id) 
   : type(std::forward<TypePtr>(_type)), id(_id) { }
 
-FnProto::FnProto(const Token& _id, std::vector<ParamDecl>&& _params, const std::optional<Token>& _return_type) 
-  : id (_id), return_type(_return_type) {
+FnProto::FnProto(const Token& _id, std::vector<ParamDecl>&& _params, std::optional<TypePtr>&& _return_type) 
+  : id (_id), return_type(std::forward<std::optional<TypePtr>>(_return_type)) {
   for (auto& param : _params) {
     parameters.emplace_back(std::move(param));
   }

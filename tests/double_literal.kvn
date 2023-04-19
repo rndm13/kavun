@@ -1,10 +1,11 @@
 module test;
 
 extern fn printf(string, double) void;
+extern fn sin(double) double;
 
 fn main() i32 {
-  var double t = 3.5;
+  var double t = 3.14;
 
-  printf("%f\n", t + 2.5);
+  printf("%f\n", sin(t));
   return 0;
 }

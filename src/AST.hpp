@@ -75,10 +75,10 @@ struct Typename {
 struct FnProto {
   Token id;
   std::vector<ParamDecl> parameters;
-  std::optional<Token> return_type;
+  std::optional<TypePtr> return_type;
 
   FnProto(const Token &_id, std::vector<ParamDecl> &&_params,
-          const std::optional<Token> &_return_type);
+          std::optional<TypePtr> &&_return_type);
 };
 
 struct Scope {
@@ -171,15 +171,6 @@ struct FnCall {
   FnCall(const Token &_id, std::vector<ExpressionPtr> &&input);
   static ExpressionPtr make(const Token &_id,
                             std::vector<ExpressionPtr> &&_args);
-};
-
-struct Indexing {
-  Token id;
-  ExpressionPtr lhs;
-  ExpressionPtr index;
-
-  Indexing(const Token &, ExpressionPtr &&, ExpressionPtr &&);
-  static ExpressionPtr make(const Token &, ExpressionPtr &&, ExpressionPtr &&);
 };
 
 struct Extern {

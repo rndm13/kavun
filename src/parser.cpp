@@ -66,11 +66,11 @@ AST::FnProto Parser::handle_fn_proto() {
   assertion(peek().type == TOK_RIGHT_PAREN, "function prototype parameters missing right parenthesis");
   if (peek(1).type == TOK_IDENTIFIER) {
     move_cursor();
-    auto return_type = peek();
+    auto return_type = handle_type();
     return AST::FnProto(
         identifier, 
         std::forward<std::vector<AST::ParamDecl>>(params),
-        return_type); 
+        std::move(return_type)); 
   }
   return AST::FnProto(
       identifier, 

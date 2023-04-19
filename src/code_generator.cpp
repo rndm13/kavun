@@ -178,7 +178,7 @@ llvm::Function* CodeGenerator::operator()(
   // return type
   llvm::Type* rt;
   if (proto.return_type) {
-    rt = get_type(proto.return_type.value());
+    rt = operator()(proto.return_type.value());
   } else {
     rt = llvm::Type::getVoidTy(*the_context);
   }

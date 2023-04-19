@@ -2,8 +2,8 @@ module input;
 
 extern fn read_i32() i32;
 extern fn read_string() string;
-extern fn print_i32(var i32 num) void;
-extern fn print_string(var string text) void;
+extern fn print_i32(i32 num) void;
+extern fn print_string(string text) void;
 
 fn main() void {
   var i32 num = read_i32();
