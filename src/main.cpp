@@ -3,8 +3,11 @@
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
+#include <istream>
 #include <llvm/Support/raw_ostream.h>
 #include <sstream>
+#include <codecvt>
+#include <locale>
 
 #include "AST.hpp"
 #include "code_generator.hpp"
@@ -45,7 +48,7 @@ FlagInfo read_flags(const std::span<std::string>& input) {
       result.optimization_level = llvm::OptimizationLevel::O1;
     } else if (str == "-O2") {
       result.optimization_level = llvm::OptimizationLevel::O2;
-    } else  if (str == "-O3") {
+    } else if (str == "-O3") {
       result.optimization_level = llvm::OptimizationLevel::O3;
     } else if (str == "-o"  || str == "--output") {
       specifying_output = true;
@@ -63,18 +66,21 @@ FlagInfo read_flags(const std::span<std::string>& input) {
   return result;
 }
 
-std::string slurp(const std::istream& input) {
-  std::stringstream ss;
+std::wstring slurp(const std::wistream& input) {
+  std::wstringstream ss;
   ss << input.rdbuf();
   return ss.str();
 }
 
 Return_values run(FlagInfo fi) {
-  std::string input_code;
-  if (fi.input_file)
-    input_code = slurp(std::ifstream(fi.input_file.value()));
+  std::wstring input_code;
+  if (fi.input_file) {
+    std::wifstream wif(fi.input_file.value());
+    wif.imbue(std::locale());
+    input_code = slurp(wif);
+  }
   else {
-    input_code = slurp(std::cin);
+    input_code = slurp(std::wcin);
   }
 
   try {
@@ -96,15 +102,17 @@ Return_values run(FlagInfo fi) {
       llvm::raw_fd_ostream out(fi.output_file.value(), ec, llvm::sys::fs::FA_Write);
       llvm::WriteBitcodeToFile(*code_generator.the_module, out);
     } else {
-      llvm::outs() << *code_generator.the_module << '\n'; } return SUCCESS;
+      llvm::outs() << *code_generator.the_module << '\n'; 
+    }
+    return SUCCESS;
   } catch (lexer_exception &e) {
-    fmt::print(stderr, "[LEXER ERROR]  {}\n", e.what());
+    std::wcerr << "[LEXER ERROR]  " << e.what() << '\n';
     return LEXER_ERROR;
   } catch (parser_exception &e) {
-    fmt::print(stderr, "[PARSER ERROR]  {}\n", e.what());
+    std::wcerr << "[PARSER ERROR]  " << e.what() << '\n';
     return PARSER_ERROR;
   } catch (interpreter_exception &e) {
-    fmt::print(stderr, "[INTERPRETER ERROR]  {}\n", e.what());
+    std::wcerr << "[INTERPRETER ERROR]  " << e.what() << '\n';
     return INTERPRETER_ERROR;
   } catch (std::exception &e) {
     fmt::print(stderr, "[UNEXPECTED ERROR]  {}\n", e.what());
@@ -113,6 +121,13 @@ Return_values run(FlagInfo fi) {
 }
 
 int main(int argc, char *argv[]) {
+  std::setlocale(LC_ALL, "en_US.utf-8");
+  std::locale::global(std::locale("en_US.utf-8"));
+  std::cout.imbue(std::locale());
+  std::cerr.imbue(std::locale());
+  std::wcout.imbue(std::locale());
+  std::wcerr.imbue(std::locale());
+
   std::vector<std::string> args;
   args.reserve(argc);
   for (auto arg = argv + 1; arg - argv < argc; ++arg) {

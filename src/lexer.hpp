@@ -12,6 +12,9 @@
 #include <string_view>
 #include <functional>
 #include <numeric>
+
+#include <fmt/xchar.h>
+
 enum TokenType {
   TOK_LEFT_PAREN,
   TOK_RIGHT_PAREN,
@@ -60,54 +63,69 @@ enum TokenType {
 // Possible types of data:
 // string, double, bool, null
 
-typedef std::variant<std::string, double, bool, std::uint32_t> Literal;
+typedef std::variant<std::wstring, double, bool, std::uint32_t> Literal;
 
 class Token {
 public:
   TokenType type;
-  std::string lexeme;
+  std::wstring lexeme;
   // If the token is a literal value (number or string)
   Literal literal;
   // Information about position in file
   size_t line;
   size_t col;
 
-  Token(TokenType __type, const std::string& __lexeme,
+  Token(TokenType __type, const std::wstring& __lexeme,
         const Literal& __literal, size_t __line, size_t __col) :
   type(__type), lexeme(__lexeme), literal(__literal),
   line(__line), col(__col) { }
 };
 
 class lexer_exception : std::exception {
-  std::string info;
+  std::wstring info;
 public:
-  lexer_exception(size_t cur_col, size_t cur_line, const std::string& in)
-  : info(fmt::format("(line {}, col {}) : {}", cur_line, cur_col, in)) { }
-  virtual const char* what() {
+  lexer_exception(size_t cur_col, size_t cur_line, const std::wstring& in)
+  : info(fmt::format(L"(line {}, col {}) : {}", cur_line, cur_col, in)) { }
+  virtual const wchar_t* what() {
     return info.c_str();
   }
 };
 
 class Lexer {
-  inline static const std::unordered_map<std::string, TokenType> keyword_lookup {
-      {"and", TOK_AND},
-      {"else", TOK_ELSE},
-      {"false", TOK_FALSE},
-      {"fn", TOK_FN},
-      {"for", TOK_FOR},
-      {"if", TOK_IF},
-      {"or", TOK_OR},
-      {"return", TOK_RETURN},
-      {"true", TOK_TRUE},
-      {"var", TOK_VAR},
-      {"module", TOK_MODULE},
-      {"break", TOK_BREAK},
-      {"continue", TOK_CONTINUE},
-      {"extern", TOK_EXTERN},
+  inline static const std::unordered_map<std::wstring, TokenType> keyword_lookup {
+      {L"and", TOK_AND},
+      {L"else", TOK_ELSE},
+      {L"false", TOK_FALSE},
+      {L"fn", TOK_FN},
+      {L"for", TOK_FOR},
+      {L"if", TOK_IF},
+      {L"or", TOK_OR},
+      {L"return", TOK_RETURN},
+      {L"true", TOK_TRUE},
+      {L"var", TOK_VAR},
+      {L"module", TOK_MODULE},
+      {L"break", TOK_BREAK},
+      {L"continue", TOK_CONTINUE},
+      {L"extern", TOK_EXTERN},
+// Ukrainian
+      {L"та", TOK_AND},
+      {L"інакше", TOK_ELSE},
+      {L"хиба", TOK_FALSE},
+      {L"фн", TOK_FN},
+      {L"для", TOK_FOR},
+      {L"якщо", TOK_IF},
+      {L"або", TOK_OR},
+      {L"повернути", TOK_RETURN},
+      {L"істина", TOK_TRUE},
+      {L"змін", TOK_VAR},
+      {L"модуль", TOK_MODULE},
+      {L"вихід", TOK_BREAK},
+      {L"продовження", TOK_CONTINUE},
+      {L"зовні", TOK_EXTERN},
   };
 
   std::vector<Token> tokens{};
-  std::string source{};
+  std::wstring source{};
 
   // Lexeme info
   size_t start_ind{};
@@ -117,16 +135,31 @@ class Lexer {
   size_t cur_col{};
   size_t cur_line{1};
 
-  static bool isalphanumeric(char c) {
-    return std::isalpha(c) || std::isdigit(c) || c == '_';
+  static bool isalphanumeric(wchar_t c) {
+    return ischaracter(c) || std::isdigit(c) || c == '_';
   }
+
+  static bool ischaracter(wchar_t c) {
+    return std::isalpha(c) || isukrainian(c);
+  }
+
+  static bool isukrainian(wchar_t c) {
+    return 
+      c == L'є' || c == L'Є' ||
+      c == L'І' || c == L'Ї' ||
+      (c >= L'А' && c <= L'я') ||
+      c == L'є' || c == L'і' ||
+      c == L'ї' || c == L'ґ' || 
+      c == L'Ґ' || c == L'\'';
+  }
+    
 
   void move_cursor(size_t to_move = 1) {
     current_ind += to_move;
     cur_col += to_move;
   }
 
-  void throw_exception(const std::string& info) {
+  void throw_exception(const std::wstring& info) {
     add_token(TOK_FAIL);
     throw lexer_exception(cur_col, cur_line, info);
   }
@@ -137,7 +170,7 @@ class Lexer {
   }
 
   [[nodiscard]]
-  std::string get_cur_lexeme(size_t offset = 0) {
+  std::wstring get_cur_lexeme(size_t offset = 0) {
     return source.substr(start_ind, current_ind - start_ind + offset);
   }
 
@@ -154,14 +187,14 @@ class Lexer {
   }
 
   [[nodiscard]]
-  char peek_next() {
+  wchar_t peek_next() {
     if (current_ind + 1 >= source.size())
       return '\0';
     return source.at(current_ind + 1);
   }
 
   [[nodiscard]]
-  bool match(char c) {
+  bool match(wchar_t c) {
     if (peek_next() == c) {
       move_cursor(2);
       return true;
@@ -170,7 +203,7 @@ class Lexer {
   }
 
   [[nodiscard]]
-  char peek() {
+  wchar_t peek() {
     if (is_end())
       return '\0';
     return source.at(current_ind);
@@ -180,9 +213,9 @@ class Lexer {
   bool is_end() { return current_ind >= source.size(); }
 
   [[nodiscard]]
-  std::string handle_escape_chars(const std::string&);
+  std::wstring handle_escape_chars(const std::wstring&);
 
-  void add_token(TokenType type, const std::string &lexeme = "",
+  void add_token(TokenType type, const std::wstring &lexeme = L"",
                  const Literal &literal = Literal{}) {
     tokens.emplace_back(type, lexeme, literal, cur_line, cur_col);
   }
@@ -195,5 +228,5 @@ class Lexer {
 
 public:
   [[nodiscard]]
-  const std::vector<Token>& get_tokens(const std::string&);
+  const std::vector<Token>& get_tokens(const std::wstring&);
 };

@@ -34,16 +34,18 @@
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/GVN.h>
 
+#include <stdexcept>
+#include <codecvt>
 #include <stack>
 
 #include "AST.hpp"
 
 class interpreter_exception : std::exception {
-  std::string info;
+  std::wstring info;
 
 public:
-  interpreter_exception(const Token &tok, const std::string &in);
-  const char *what();
+  interpreter_exception(const Token &tok, const std::wstring &in);
+  const wchar_t *what();
 };
 
 struct VariableData {
@@ -55,7 +57,7 @@ struct VariableData {
 };
 
 class ScopeData {
-  std::unordered_map<std::string, VariableData> variables;
+  std::unordered_map<std::wstring, VariableData> variables;
 
 public:
   std::optional<llvm::BasicBlock *> to_continue;
@@ -92,14 +94,14 @@ class CodeGenerator {
   // TODO: add global scope
   ScopeStack scope_stack;
 
-  std::unordered_map<std::string, llvm::Type *> type_lookup;
+  std::unordered_map<std::wstring, llvm::Type *> type_lookup;
 
   llvm::OptimizationLevel optimization_level;
 
   llvm::Function *get_function(Token);
   llvm::Type *get_type(Token);
 
-  static void warn(Token tok, const std::string_view &in);
+  static void warn(Token tok, const std::wstring_view &in);
 
   llvm::Value *binOpFloat(const AST::BinOperator &, llvm::Value *,
                           llvm::Value *);
@@ -119,7 +121,7 @@ public:
   void operator()(const AST::TopLevelPtr &);
 
   llvm::Function *operator()(const AST::FnProto &);
-  llvm::BasicBlock *operator()(const AST::Scope &, std::string block_name,
+  llvm::BasicBlock *operator()(const AST::Scope &, std::wstring block_name,
                                llvm::Function *parent);
 
   llvm::BasicBlock *operator()(const AST::Scope &, llvm::BasicBlock *);

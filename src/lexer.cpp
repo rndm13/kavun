@@ -3,7 +3,7 @@
 #include "lexer.hpp"
 
 [[nodiscard]]
-const std::vector<Token>& Lexer::get_tokens(const std::string& str) {
+const std::vector<Token>& Lexer::get_tokens(const std::wstring& str) {
   source = str;
   start_ind = 0;
   current_ind = 0;
@@ -17,7 +17,7 @@ const std::vector<Token>& Lexer::get_tokens(const std::string& str) {
 }
 
 void Lexer::scan_token() {
-  char c = peek();
+  wchar_t c = peek();
   switch (c) {
   break; case '(': add_token(TOK_LEFT_PAREN, get_cur_lexeme(1));
   break; case ')': add_token(TOK_RIGHT_PAREN, get_cur_lexeme(1));
@@ -34,27 +34,27 @@ void Lexer::scan_token() {
   break; case '%': add_token(TOK_MODULO, get_cur_lexeme(1));
   break; case '/':
     if (peek_next() == '/') {
-      move_while ([](char ch){return ch != '\n';});
+      move_while ([](wchar_t ch){return ch != '\n';});
       // ignore comments
     } else {
       add_token(TOK_SLASH, get_cur_lexeme(1));
     }
   break; case '!': 
     if (match('='))
-      add_token(TOK_BANG_EQUAL, "!=");
-    else add_token(TOK_BANG, "!");
+      add_token(TOK_BANG_EQUAL, L"!=");
+    else add_token(TOK_BANG, L"!");
   break; case '=': 
     if (match('='))
-      add_token(TOK_EQUAL_EQUAL, "==");
-    else add_token(TOK_EQUAL, "=");
+      add_token(TOK_EQUAL_EQUAL, L"==");
+    else add_token(TOK_EQUAL, L"=");
   break; case '<': 
     if (match('='))
-      add_token(TOK_LESS_EQUAL, "<=");
-    else add_token(TOK_LESS, "<");
+      add_token(TOK_LESS_EQUAL, L"<=");
+    else add_token(TOK_LESS, L"<");
   break; case '>': 
     if (match('='))
-      add_token(TOK_GREATER_EQUAL, ">=");
-    else add_token(TOK_GREATER, ">");
+      add_token(TOK_GREATER_EQUAL, L">=");
+    else add_token(TOK_GREATER, L">");
   break;
   case ' ':
   case '\r':
@@ -64,19 +64,19 @@ void Lexer::scan_token() {
   break; default:
     if (std::isdigit(c))
       handle_number();
-    else if (std::isalpha(c))
+    else if (ischaracter(c))
       handle_identifier();
     else
-      throw_exception("Unexpected character.");
+      throw_exception(fmt::format(L"unexpected character '{}'.", c));
   }
   advance_lexeme();
 }
 
 void Lexer::handle_number() {
   bool point = false;
-  move_while([this, &point](char c) mutable {
+  move_while([this, &point](wchar_t c) mutable {
         if (c == '.') {
-          if (point) throw_exception("Number with 2 floating points");
+          if (point) throw_exception(L"number with 2 floating points");
 
           point = !point;
           return point;
@@ -94,16 +94,16 @@ void Lexer::handle_number() {
       add_token(TOK_NUMBER, get_cur_lexeme(), result);
     }
   } catch (std::invalid_argument& e) {
-    throw_exception(fmt::format("Couldn't parse a number '{}'", get_cur_lexeme()));
+    throw_exception(fmt::format(L"Couldn't parse a number '{}'", get_cur_lexeme()));
   } catch (std::out_of_range& e) {
-    throw_exception(fmt::format("Number overflows size of double '{}'", get_cur_lexeme()));
+    throw_exception(fmt::format(L"Number overflows size of double '{}'", get_cur_lexeme()));
   }
 }
 
 [[nodiscard]]
-std::string Lexer::handle_escape_chars(const std::string& input) {
-  std::string output{};
-  std::for_each(input.cbegin(), input.cend(),[&output, escaped = false, this](char cur) mutable {
+std::wstring Lexer::handle_escape_chars(const std::wstring& input) {
+  std::wstring output{};
+  std::for_each(input.cbegin(), input.cend(),[&output, escaped = false, this](wchar_t cur) mutable {
       if (escaped) {
         switch (cur) {
           break; case 'n':
@@ -113,7 +113,7 @@ std::string Lexer::handle_escape_chars(const std::string& input) {
           break; case '\\':
             output += '\\';
           break; default:
-            throw_exception(fmt::format("unknown escape char '{}'", cur));
+            throw_exception(fmt::format(L"unknown escape char '{}'", static_cast<char>(cur)));
             break;
         };
         escaped = false;
@@ -129,7 +129,7 @@ std::string Lexer::handle_escape_chars(const std::string& input) {
 }
 
 void Lexer::handle_string() {
-  move_while([quote = false](char c) mutable {
+  move_while([quote = false](wchar_t c) mutable {
     if (c == '"') {
       quote = !quote;
       return quote;
@@ -138,11 +138,11 @@ void Lexer::handle_string() {
   });
 
   if (is_end() && peek() != '"' && start_ind != current_ind) 
-    throw_exception("End of string not found.");
-  std::string lexeme = get_cur_lexeme(1);
+    throw_exception(L"End of string not found.");
+  std::wstring lexeme = get_cur_lexeme(1);
   move_cursor();
 
-  std::string str = lexeme.substr(1, lexeme.length() - 2);
+  std::wstring str = lexeme.substr(1, lexeme.length() - 2);
 
   str = handle_escape_chars(str);
 

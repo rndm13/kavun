@@ -15,11 +15,11 @@
 #include "lexer.hpp"
 
 class parser_exception : std::exception {
-  std::string info;
+  std::wstring info;
 public:
-  parser_exception(const Token& tok, const std::string& in)
-  : info(fmt::format("('{}', line {}, col {}) : {}", tok.lexeme, tok.line, tok.col, in)) { }
-  virtual const char* what() {
+  parser_exception(const Token& tok, const std::wstring& in)
+  : info(fmt::format(L"('{}', line {}, col {}) : {}", tok.lexeme, tok.line, tok.col, in)) { }
+  virtual const wchar_t* what() {
     return info.c_str();
   }
 };
@@ -39,11 +39,11 @@ class Parser {
     return tokens.at(std::min(current_ind + offset, tokens.size() - 1));
   }
   
-  void throw_exception(const std::string& in) {
+  void throw_exception(const std::wstring& in) {
     throw parser_exception(peek(), in);
   }
 
-  void assertion(bool condition, const std::string& message) {
+  void assertion(bool condition, const std::wstring& message) {
     if (!condition) throw_exception(message);
   }
 

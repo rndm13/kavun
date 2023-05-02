@@ -1,16 +1,24 @@
 #include "code_generator.hpp"
-#include <stdexcept>
 
-interpreter_exception::interpreter_exception(const Token& tok, const std::string& in)
-  : info(fmt::format("('{}', line {}, col {}) : {}",
+std::string ws2s(const std::wstring& wstr) {
+  if (wstr == L"початок")
+    return "main";
+  using convert_typeX = std::codecvt_utf8<wchar_t>;
+  std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+  return converterX.to_bytes(wstr);
+}
+
+interpreter_exception::interpreter_exception(const Token& tok, const std::wstring& in)
+  : info(fmt::format(L"('{}', line {}, col {}) : {}",
         tok.lexeme, tok.line, tok.col, in)) { }
 
-void CodeGenerator::warn(Token tok, const std::string_view& in) {
-  fmt::print("[WARNING]  ('{}', line {}, col {}) : {}",
+void CodeGenerator::warn(Token tok, const std::wstring_view& in) {
+  fmt::print(L"[WARNING]  ('{}', line {}, col {}) : {}",
         tok.lexeme, tok.line, tok.col, in);
 }
 
-const char* interpreter_exception::what() {
+const wchar_t* interpreter_exception::what() {
   return info.c_str();
 } 
  
@@ -85,15 +93,15 @@ const VariableData& ScopeStack::get_variable(const Token& name) const {
     if (scope.check_variable(name))
       return scope.get_variable(name);
   }
-  throw interpreter_exception(name, "no such variable");
+  throw interpreter_exception(name, L"no such variable");
 }
 
 void ScopeData::assign_variable(const Token& name, llvm::Value* val) {
   if (!check_variable(name))
-    throw interpreter_exception(name, "cannot assign value to unknown variable");
+    throw interpreter_exception(name, L"cannot assign value to unknown variable");
   auto var = get_variable(name);
   if (var.type != val -> getType())
-    throw interpreter_exception(name, "cannot assign value to a variable with different type");
+    throw interpreter_exception(name, L"cannot assign value to a variable with different type");
   var.value = val;
 
   variables.at(name.lexeme) = var;
@@ -106,14 +114,14 @@ void ScopeStack::assign_variable(const Token& name, llvm::Value* val) {
       return;
     }
   }
-  throw interpreter_exception(name, "cannot assign value to unknown variable");
+  throw interpreter_exception(name, L"cannot assign value to unknown variable");
 }
 
 llvm::Function* CodeGenerator::get_function(Token identifier) {
-  auto result = the_module -> getFunction(identifier.lexeme);
+  auto result = the_module -> getFunction(ws2s(identifier.lexeme));
   if (result)
     return result;
-  throw interpreter_exception(identifier, "function not found");
+  throw interpreter_exception(identifier, L"function not found");
   return nullptr;
 }
 
@@ -121,7 +129,7 @@ llvm::Type* CodeGenerator::get_type(Token identifier) {
   try {
     return type_lookup.at(identifier.lexeme);
   } catch (std::out_of_range&) {
-    throw interpreter_exception(identifier, "unknown type");
+    throw interpreter_exception(identifier, L"unknown type");
   }
 }
 
@@ -141,7 +149,7 @@ void CodeGenerator::operator()(const AST::StatementPtr& statement) {
 void CodeGenerator::operator()(const AST::Break& br) {
   auto fl = scope_stack.get_top_loop();
   if (!fl) {
-    throw interpreter_exception(br.id, "break must be inside for loop");
+    throw interpreter_exception(br.id, L"break must be inside for loop");
   }
   if (!the_builder -> GetInsertBlock() -> getTerminator()) {
     fl.value() -> used_break = true;
@@ -152,7 +160,7 @@ void CodeGenerator::operator()(const AST::Break& br) {
 void CodeGenerator::operator()(const AST::Continue & cont) {
   auto fl = scope_stack.get_top_loop();
   if (!fl) {
-    throw interpreter_exception(cont.id, "break must be inside for loop");
+    throw interpreter_exception(cont.id, L"break must be inside for loop");
   }
   if (!the_builder -> GetInsertBlock() -> getTerminator()) {
     the_builder -> CreateBr(fl.value() -> to_continue.value());
@@ -195,7 +203,7 @@ llvm::Function* CodeGenerator::operator()(
     llvm::Function::Create(
         func_type,
         llvm::Function::ExternalLinkage,
-        proto.id.lexeme,
+        ws2s(proto.id.lexeme),
         the_module.get());
 
   return func;
@@ -203,13 +211,13 @@ llvm::Function* CodeGenerator::operator()(
 
 llvm::BasicBlock* CodeGenerator::operator()(
     const AST::Scope& scope,
-    std::string block_name,
+    std::wstring block_name,
     llvm::Function* parent) {
 
   llvm::BasicBlock* block = 
     llvm::BasicBlock::Create(
         *the_context,
-        block_name);
+        ws2s(block_name));
   block -> insertInto(parent);
 
   the_builder -> SetInsertPoint(block);
@@ -259,7 +267,7 @@ void CodeGenerator::operator()(const AST::FnDecl& decl) {
         false);
   }
 
-  [[maybe_unused]] auto scope = operator()(decl.body, "function_entry", func);
+  [[maybe_unused]] auto scope = operator()(decl.body, L"function_entry", func);
 
   scope_stack.pop_scope(); // read above todo
   if (!the_builder -> GetInsertBlock() -> getTerminator()) {
@@ -267,7 +275,7 @@ void CodeGenerator::operator()(const AST::FnDecl& decl) {
       the_builder -> CreateRetVoid();
       return;
     }
-    throw interpreter_exception(decl.proto.id, "function is not terminated (not all codepaths return a value)");
+    throw interpreter_exception(decl.proto.id, L"function is not terminated (not all codepaths return a value)");
   } 
 }
 
@@ -276,7 +284,7 @@ void CodeGenerator::operator()(const AST::Conditional& cond) {
   auto cond_eval = operator()(cond.condition);
 
   if (cond_eval == nullptr) {
-    throw interpreter_exception(cond.id, "condition cannot be void");
+    throw interpreter_exception(cond.id, L"condition cannot be void");
     return;
   }
 
@@ -285,7 +293,7 @@ void CodeGenerator::operator()(const AST::Conditional& cond) {
 
   auto parent_fn  = orig_block -> getParent();
 
-  auto if_block = operator()(cond.if_body, "then_block", parent_fn);
+  auto if_block = operator()(cond.if_body, L"then_block", parent_fn);
 
   the_builder -> SetInsertPoint(orig_block, orig_point);
 
@@ -293,7 +301,7 @@ void CodeGenerator::operator()(const AST::Conditional& cond) {
   if (cond.else_body) {
     else_block = operator()(
         cond.else_body.value(), 
-        "else_block", 
+        L"else_block", 
         parent_fn);
   }
 
@@ -425,11 +433,11 @@ void CodeGenerator::operator()(const AST::Return& ret) {
 
 void CodeGenerator::operator()(const AST::VarDecl& var_decl) {
   if (scope_stack.check_variable(var_decl.id))
-    throw interpreter_exception(var_decl.id, "redefinition of a variable");
+    throw interpreter_exception(var_decl.id, L"redefinition of a variable");
 
   auto expr_eval = operator()( var_decl.expression);
   auto type = operator()(var_decl.type);
-  auto alloca = the_builder -> CreateAlloca(type, nullptr, var_decl.id.lexeme);
+  auto alloca = the_builder -> CreateAlloca(type, nullptr, ws2s(var_decl.id.lexeme));
   the_builder -> CreateStore(expr_eval, alloca);
 
   scope_stack.add_variable(
@@ -469,7 +477,7 @@ llvm::Value* CodeGenerator::binOpFloat(
     break; default: 
       throw interpreter_exception(
           bin_op.op,
-          "unknown binary operator for floating types");
+          L"unknown binary operator for floating types");
   }
 }
 
@@ -504,7 +512,7 @@ llvm::Value* CodeGenerator::binOpInteger(
     break; default: 
       throw interpreter_exception(
           bin_op.op,
-          "unknown binary operator for integer types");
+          L"unknown binary operator for integer types");
   }
 }
 
@@ -520,7 +528,7 @@ llvm::Value* CodeGenerator::binOpBoolean(
     break; default: 
       throw interpreter_exception(
           bin_op.op,
-          "unknown binary operator for bool types");
+          L"unknown binary operator for bool types");
   }
 }
 
@@ -542,7 +550,7 @@ llvm::Value* CodeGenerator::operator()(const AST::BinOperator& bin_op) {
   llvm::Value* lhs_eval = operator()(bin_op.lhs);
   llvm::Value* rhs_eval = operator()(bin_op.rhs);
   if (!lhs_eval || !rhs_eval) {
-    throw interpreter_exception(bin_op.op, "void cannot be an operand");
+    throw interpreter_exception(bin_op.op, L"void cannot be an operand");
     return nullptr;
   }
 
@@ -558,14 +566,14 @@ llvm::Value* CodeGenerator::operator()(const AST::BinOperator& bin_op) {
     return binOpInteger(bin_op, lhs_eval, rhs_eval);
   }
 
-  throw interpreter_exception(bin_op.op, "no available operators for those types");
+  throw interpreter_exception(bin_op.op, L"no available operators for those types");
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::UnOperator& un_op) {
   llvm::Value* rhs_eval = operator()(un_op.rhs);
   
   if (!rhs_eval) {
-    throw interpreter_exception(un_op.op, "void cannot be an operand");
+    throw interpreter_exception(un_op.op, L"void cannot be an operand");
     return nullptr;
   }
 
@@ -584,7 +592,7 @@ llvm::Value* CodeGenerator::operator()(const AST::UnOperator& un_op) {
   }
   throw interpreter_exception(
       un_op.op,
-      "unknown unary operator for this type");
+      L"unknown unary operator for this type");
 }
 
 llvm::Value* CodeGenerator::operator()(const AST::Literal& literal) {
@@ -592,11 +600,11 @@ llvm::Value* CodeGenerator::operator()(const AST::Literal& literal) {
     return the_builder -> getInt32(std::get<std::uint32_t>(
               literal.value.literal)); // TODO: move this to int64 
   }
-  if (std::holds_alternative<std::string>(literal.value.literal)) {
+  if (std::holds_alternative<std::wstring>(literal.value.literal)) {
     return
       the_builder ->
         CreateGlobalStringPtr(
-          std::get<std::string>(literal.value.literal),
+          ws2s(std::get<std::wstring>(literal.value.literal)),
           "strtmp",
           0,
           the_module.get());
@@ -636,7 +644,7 @@ llvm::Value* CodeGenerator::operator()(const AST::FnCall& fn) {
     auto arg_eval = operator()(arg);
 
     if (!arg_eval) {
-      throw interpreter_exception(fn.id, "void cannot be an argument");
+      throw interpreter_exception(fn.id, L"void cannot be an argument");
       return nullptr;
     }
 
@@ -653,7 +661,7 @@ llvm::Value* CodeGenerator::operator()(const AST::FnCall& fn) {
 
 void CodeGenerator::operator()(const AST::Module& mod) {
   the_module = std::make_unique<llvm::Module>(
-      mod.name.lexeme, 
+      ws2s(mod.name.lexeme), 
       *the_context);
   for (auto& func : mod.functions) {
     operator()(func);
@@ -668,16 +676,22 @@ CodeGenerator::CodeGenerator(llvm::OptimizationLevel _optim)
 : optimization_level(_optim) {
   the_context = std::make_unique<llvm::LLVMContext>();
   the_builder = std::make_unique<llvm::IRBuilder<>>(*the_context);
-  type_lookup["i32"]  = llvm::Type::getInt32Ty(*the_context);
-  type_lookup["bool"] = llvm::Type::getInt1Ty(*the_context);
-  type_lookup["void"] = llvm::Type::getVoidTy(*the_context);
+  type_lookup[L"i32"]  = llvm::Type::getInt32Ty(*the_context);
+  type_lookup[L"bool"] = llvm::Type::getInt1Ty(*the_context);
+  type_lookup[L"void"] = llvm::Type::getVoidTy(*the_context);
   // TODO: change string to a class
-  type_lookup["string"] = 
+  type_lookup[L"string"] = 
     llvm::PointerType::get(llvm::Type::getInt8Ty(*the_context), 0); 
-  type_lookup["double"] =
+  type_lookup[L"double"] =
     llvm::Type::getDoubleTy(*the_context);
 
-  // TODO: add double
+  type_lookup[L"і32"]  = llvm::Type::getInt32Ty(*the_context);
+  type_lookup[L"логічне"] = llvm::Type::getInt1Ty(*the_context);
+  type_lookup[L"нічого"] = llvm::Type::getVoidTy(*the_context);
+  type_lookup[L"строка"] = 
+    llvm::PointerType::get(llvm::Type::getInt8Ty(*the_context), 0); 
+  type_lookup[L"дійсне"] =
+    llvm::Type::getDoubleTy(*the_context);
 }
 
 void CodeGenerator::optimize_module() {

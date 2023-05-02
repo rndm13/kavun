@@ -39,6 +39,7 @@ create_test_sourcelist (Tests
   valid_program3.kvn
   var_decl.kvn
   if_terminator.kvn
+  ukrainian.kvn
   optional_return_type.kvn
   lexer_fail_no_end_string.kvn
   lexer_fail_inv_char.kvn
