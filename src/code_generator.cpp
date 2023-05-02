@@ -658,9 +658,9 @@ void CodeGenerator::operator()(const AST::Module& mod) {
   for (auto& func : mod.functions) {
     operator()(func);
   }
-//   if (llvm::verifyModule(*the_module), &llvm::outs()) {
-//     throw std::runtime_error("LLVM verification error");
-//   }
+  if (llvm::verifyModule(*the_module, &llvm::outs())) {
+    throw std::runtime_error("LLVM verification error");
+  }
   optimize_module();
 }
 
@@ -681,6 +681,8 @@ CodeGenerator::CodeGenerator(llvm::OptimizationLevel _optim)
 }
 
 void CodeGenerator::optimize_module() {
+  if (optimization_level == llvm::OptimizationLevel::O0)
+    return;
   // Create the analysis managers.
   llvm::LoopAnalysisManager LAM;
   llvm::FunctionAnalysisManager FAM;
