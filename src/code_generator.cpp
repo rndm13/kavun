@@ -688,7 +688,7 @@ CodeGenerator::CodeGenerator(llvm::OptimizationLevel _optim)
   type_lookup[L"і32"]  = llvm::Type::getInt32Ty(*the_context);
   type_lookup[L"логічне"] = llvm::Type::getInt1Ty(*the_context);
   type_lookup[L"нічого"] = llvm::Type::getVoidTy(*the_context);
-  type_lookup[L"строка"] = 
+  type_lookup[L"рядок"] = 
     llvm::PointerType::get(llvm::Type::getInt8Ty(*the_context), 0); 
   type_lookup[L"дійсне"] =
     llvm::Type::getDoubleTy(*the_context);
