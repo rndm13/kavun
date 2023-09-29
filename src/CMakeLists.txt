@@ -5,25 +5,25 @@ add_library(code_generator code_generator.hpp code_generator.cpp)
 
 target_link_libraries(lexer
   PRIVATE fmt::fmt
-  # -fsanitize=address
+  "$<$<CONFIG:DEBUG>:-fsanitize=address>"
 )
 
 target_link_libraries(AST
   PRIVATE fmt::fmt
   PRIVATE lexer
-  # -fsanitize=address
+  "$<$<CONFIG:DEBUG>:-fsanitize=address>"
 )
 
 target_link_libraries(parser
   PRIVATE fmt::fmt
   PRIVATE lexer
   PRIVATE AST
-  #  -fsanitize=address
+  "$<$<CONFIG:DEBUG>:-fsanitize=address>"
 )
 
 target_link_libraries(code_generator
   PRIVATE fmt::fmt
   PRIVATE ${llvm_libs}
   PRIVATE AST
-  # -fsanitize=address
+  "$<$<CONFIG:DEBUG>:-fsanitize=address>"
 )
